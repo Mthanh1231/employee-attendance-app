@@ -1,0 +1,22 @@
+name: flutter_attendance_clean
+description: A Flutter app with Clean Architecture and SOLID principles
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.17.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  http: ^0.13.5
+  flutter_bloc: ^8.1.1
+  # Nếu muốn dùng json_annotation, dio, v.v. thì thêm
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
