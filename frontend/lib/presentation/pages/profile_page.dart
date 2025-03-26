@@ -1,3 +1,5 @@
+// lib/presentation/pages/profile_page.dart
+
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../blocs/user/user_bloc.dart';
 import '../blocs/user/user_state.dart';
+import 'edit_profile_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -159,7 +162,14 @@ class _ProfilePageState extends State<ProfilePage> {
     final place = cccdInfo['place'] ?? 'Trống';
     final date = cccdInfo['date'] ?? 'Trống';
     final home = cccdInfo['home'] ?? 'Trống';
-    // ... cccd_name, na, id, s, ddnd, tg nếu có
+    final cccdName = cccdInfo['cccd_name'] ?? 'Trống';
+    final img = cccdInfo['img'] ?? 'Trống';
+    final na = cccdInfo['na'] ?? 'Trống';
+    final cccdId = cccdInfo['id'] ?? 'Trống';
+    final s = cccdInfo['s'] ?? 'Trống';
+    final ddnd = cccdInfo['ddnd'] ?? 'Trống';
+    final tg = cccdInfo['tg'] ?? 'Trống';
+    final cccd = cccdInfo['cccd'] ?? 'Trống'; 
 
     return Scaffold(
       appBar: AppBar(title: const Text('Trang cá nhân')),
@@ -176,17 +186,48 @@ class _ProfilePageState extends State<ProfilePage> {
             Text('CCCD - place: $place'),
             Text('CCCD - date: $date'),
             Text('CCCD - home: $home'),
-            // ... hiển thị các trường cccd_info khác nếu cần
+            Text('CCCD - cccd_name: $cccdName'),
+            Text('CCCD - img: $img'),
+            Text('CCCD - na: $na'),
+            Text('CCCD - id: $cccdId'),
+            Text('CCCD - s: $s'),
+            Text('CCCD - ddnd: $ddnd'),
+            Text('CCCD - tg: $tg'),
+
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                // Chỉnh sửa thông tin
+            onPressed: () async {
+              // Lấy token
+              final userBloc = context.read<UserBloc>();
+              final userState = userBloc.state;
+              String? token;
+              if (userState is UserLoggedIn) {
+                token = userState.token;
+              } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Chỉnh sửa thông tin!')),
+                  const SnackBar(content: Text('Bạn chưa đăng nhập!')),
                 );
-              },
-              child: const Text('Chỉnh sửa thông tin'),
-            ),
+                return;
+              }
+
+              // Mở EditProfilePage
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => EditProfilePage(
+                    token: token!,
+                    phone: phone,
+                    name: name,
+                    cccdInfo: cccdInfo,
+                  ),
+                ),
+              );
+              if (result == true) {
+                _fetchProfile(); // Reload
+              }
+            },
+            child: const Text('Chỉnh sửa thông tin'),
+          ),
             const SizedBox(height: 10),
             ElevatedButton(
               onPressed: _onCheckInOut,
