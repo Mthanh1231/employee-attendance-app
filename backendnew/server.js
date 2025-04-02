@@ -1,10 +1,10 @@
 require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
-const cors = require('cors'); // import cors
+const cors = require('cors'); 
 
 const userRoutes = require('./routes/userRoutes');
-const attendanceRoutes = require('./routes/attendanceRoutes');
+const employeeAttendanceRoutes = require('./routes/employeeAttendanceRoutes');
 const managerRoutes = require('./routes/managerRoutes');
 const employeeRoutes = require('./routes/employeeRoutes');
 
@@ -13,11 +13,11 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(bodyParser.json());
-app.use(cors()); // bật CORS cho toàn bộ request
+app.use(cors()); 
 
 // Đăng ký router
 app.use('/api/users', userRoutes);
-app.use('/api', attendanceRoutes);
+app.use('/api/employee', employeeAttendanceRoutes);
 
 app.use('/api/manager', managerRoutes);
 app.use('/api/employee', employeeRoutes);
