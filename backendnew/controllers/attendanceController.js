@@ -3,8 +3,8 @@ const attendanceService = require('../services/attendanceService');
 
 const checkAttendance = async (req, res) => {
   try {
-    const { status } = req.body; // 'checkin' hoặc 'checkout'
-    const result = await attendanceService.markAttendance(req.user.id, status);
+    const { status, lat, lng } = req.body;  // frontend phải gửi thêm lat, lng
+    const result = await attendanceService.markAttendance(req.user.id, status, lat, lng);
     res.json({
       message: `Chấm công ${status} thành công`,
       timestamp: result.timestamp
@@ -14,6 +14,7 @@ const checkAttendance = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+
 const getUserAttendance = async (req, res) => {
   try {
     const attendanceList = await attendanceService.getUserAttendance(req.user.id);
