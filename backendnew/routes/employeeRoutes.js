@@ -11,7 +11,5 @@ router.post('/login', loginEmployee);
 
 // Xem thông tin cá nhân
 router.get('/profile', authenticate, getEmployeeProfile);
-// Cập nhật thông tin
-router.put('/profile', authenticate, updateEmployeeAll);
 
 module.exports = router;

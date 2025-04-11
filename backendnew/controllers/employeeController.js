@@ -33,19 +33,8 @@ const getEmployeeProfile = async (req, res) => {
   }
 };
 
-// Cập nhật thông tin (gộp cccd_info)
-const updateEmployeeAll = async (req, res) => {
-  try {
-    await employeeService.updateEmployeeAll(req.user.id, req.body);
-    res.json({ message: 'Cập nhật thông tin thành công' });
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
 module.exports = {
   registerEmployee,
   loginEmployee,
-  getEmployeeProfile,
-  updateEmployeeAll
+  getEmployeeProfile
 };

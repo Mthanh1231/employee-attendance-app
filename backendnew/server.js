@@ -3,7 +3,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors'); 
 
-const userRoutes = require('./routes/userRoutes');
+
 const employeeAttendanceRoutes = require('./routes/employeeAttendanceRoutes');
 const managerRoutes = require('./routes/managerRoutes');
 const employeeRoutes = require('./routes/employeeRoutes');
@@ -18,7 +18,7 @@ app.use(bodyParser.json());
 app.use(cors()); 
 
 // Đăng ký router
-app.use('/api/users', userRoutes);
+
 app.use('/api/employee', employeeAttendanceRoutes);
 
 app.use('/api/manager', managerRoutes);

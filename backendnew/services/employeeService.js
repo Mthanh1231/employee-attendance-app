@@ -57,21 +57,8 @@ const getEmployeeProfile = async (userId) => {
   return userData;
 };
 
-const updateEmployeeAll = async (userId, data) => {
-  const { cccd_info, ...otherFields } = data;
-  if (cccd_info) {
-    if (cccd_info.name) {
-      cccd_info.cccd_name = cccd_info.name;
-      delete cccd_info.name;
-    }
-    otherFields.cccd_info = cccd_info;
-  }
-  await updateEmployeeById(userId, otherFields);
-};
-
 module.exports = {
   registerEmployee,
   loginEmployee,
   getEmployeeProfile,
-  updateEmployeeAll
 };
