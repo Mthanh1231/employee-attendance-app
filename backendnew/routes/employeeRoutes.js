@@ -1,15 +1,35 @@
 // routes/employeeRoutes.js
 const express = require('express');
-const router = express.Router();
-const { registerEmployee, loginEmployee, getEmployeeProfile, updateEmployeeAll } = require('../controllers/employeeController');
+const router  = express.Router();
 const authenticate = require('../middleware/authenticate');
+const checkRole    = require('../middleware/checkRole');
+const upload       = require('../configs/multer');
+const {
+  registerEmployee,
+  loginEmployee,
+  getEmployeeProfile,
+  cccdScanBack,
+  cccdScanFront
+} = require('../controllers/employeeController');
 
-// Đăng ký employee
 router.post('/register', registerEmployee);
-// Đăng nhập employee
-router.post('/login', loginEmployee);
+router.post('/login',    loginEmployee);
+router.get ('/profile', authenticate, checkRole('employee'), getEmployeeProfile);
 
-// Xem thông tin cá nhân
-router.get('/profile', authenticate, getEmployeeProfile);
+// Quét CCCD mặt sau
+router.post(
+  '/cccd-scan/back',
+  authenticate, checkRole('employee'),
+  upload.single('file'),
+  cccdScanBack
+);
+
+// Quét CCCD mặt trước
+router.post(
+  '/cccd-scan/front',
+  authenticate, checkRole('employee'),
+  upload.single('file'),
+  cccdScanFront
+);
 
 module.exports = router;

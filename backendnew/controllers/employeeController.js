@@ -1,5 +1,6 @@
 // controllers/employeeController.js
 const employeeService = require('../services/employeeService');
+const { processCccdImage } = require('../services/cccdService');
 
 // Đăng ký
 const registerEmployee = async (req, res) => {
@@ -33,8 +34,33 @@ const getEmployeeProfile = async (req, res) => {
   }
 };
 
+// Quét mặt sau
+const cccdScanBack = async (req, res) => {
+  try {
+    const result = await processCccdImage(req.user.id, req.file.path, 'back');
+    res.json({ message: 'Quét CCCD mặt sau thành công', result });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: e.message });
+  }
+};
+
+// Quét mặt trước
+const cccdScanFront = async (req, res) => {
+  try {
+    const result = await processCccdImage(req.user.id, req.file.path, 'front');
+    res.json({ message: 'Quét CCCD mặt trước thành công', result });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: e.message });
+  }
+};
+
+
 module.exports = {
   registerEmployee,
   loginEmployee,
-  getEmployeeProfile
+  getEmployeeProfile,
+  cccdScanBack,
+  cccdScanFront
 };

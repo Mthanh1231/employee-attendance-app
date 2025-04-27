@@ -9,6 +9,7 @@ const managerRoutes = require('./routes/managerRoutes');
 const employeeRoutes = require('./routes/employeeRoutes');
 const employeeProfileUpdateRoutes = require('./routes/employeeProfileUpdateRoutes');
 const managerProfileUpdateRoutes = require('./routes/managerProfileUpdateRoutes');
+const cccdRoutes = require('./routes/cccdRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,6 +27,8 @@ app.use('/api/employee', employeeRoutes);
 
 app.use('/api/employee', employeeProfileUpdateRoutes); 
 app.use('/api/manager', managerProfileUpdateRoutes); 
+
+app.use('/api/employee', cccdRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server đang chạy trên cổng ${PORT}`);
