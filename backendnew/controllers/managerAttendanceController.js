@@ -1,0 +1,39 @@
+// controllers/managerAttendanceController.js
+const attendanceService = require('../services/attendanceService');
+const { getAllEmployees } = require('../repositories/employeeRepository');
+const { endOfMonth, addDays } = require('date-fns');
+
+async function getCalendarByUser(req, res) {
+  try {
+    // lấy employeeId từ query
+    const userId = req.query.employeeId;
+    if (!userId) {
+      return res.status(400).json({ message: 'Thiếu employeeId' });
+    }
+
+    // tái sử dụng service: trả về calendar của userId
+    const { calendar } = await attendanceService.buildCalendar(userId, req.query.month);
+    res.json({ employeeId: userId, calendar });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+}
+
+async function getAllCalendars(req, res) {
+  try {
+    const month = req.query.month;
+    const employees = await getAllEmployees();
+    const result = [];
+
+    for (const emp of employees) {
+      const { calendar } = await attendanceService.buildCalendar(emp.id, month);
+      result.push({ employeeId: emp.id, calendar });
+    }
+
+    res.json({ data: result });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+}
+
+module.exports = { getCalendarByUser, getAllCalendars };

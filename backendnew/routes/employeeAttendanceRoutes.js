@@ -1,11 +1,14 @@
-// backend/routes/employeeAttendanceRoutes.js
+// backendnew /routes/employeeAttendanceRoutes.js
 const express = require('express');
-const router  = express.Router();
+const router = express.Router();
 const authenticate = require('../middleware/authenticate');
-const checkRole    = require('../middleware/checkRole');
-const { checkAttendance, getUserAttendance } = require('../controllers/attendanceController');
+const checkRole = require('../middleware/checkRole');
+const {
+  checkAttendance,
+  getAttendanceCalendar,
+  getUserAttendance
+} = require('../controllers/attendanceController');
 
-// POST /api/employee/attendance
 router.post(
   '/attendance',
   authenticate,
@@ -13,12 +16,11 @@ router.post(
   checkAttendance
 );
 
-// GET /api/employee/attendance
 router.get(
-  '/attendance',
+  '/attendance/calendar',
   authenticate,
   checkRole('employee'),
-  getUserAttendance
+  getAttendanceCalendar
 );
 
 module.exports = router;

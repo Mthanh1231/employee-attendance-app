@@ -1,109 +1,180 @@
 // backend/services/attendanceService.js
+
 require('dotenv').config();
 const { getMachineConfig } = require('../repositories/configRepository');
-const { addAttendance, findAttendanceByUser, findLastAttendance } = require('../repositories/attendanceRepository');
+const {
+  addAttendance,
+  findAttendanceByUser,
+  findLastAttendance
+} = require('../repositories/attendanceRepository');
+const {
+  isWeekend,
+  getDay,
+  startOfDay,
+  format,
+  endOfMonth,
+  addDays
+} = require('date-fns');
 
-/**
- * Convert degrees → radians.
- */
+// 0 = Sunday … 6 = Saturday; workdays = Mon (1) → Fri (5)
+function isWorkday(date) {
+  const d = getDay(date);
+  return d >= 1 && d <= 5;
+}
+
+// Haversine formula to compute distance in meters :contentReference[oaicite:0]{index=0}
 function deg2rad(deg) {
   return deg * (Math.PI / 180);
 }
-
-/**
- * Haversine formula: compute distance (in meters) between two lat/lng points.
- */
 function getDistanceInMeters(lat1, lon1, lat2, lon2) {
-  const R = 6371e3; // Earth radius in meters
+  const R = 6371e3; // Earth’s radius in meters
   const φ1 = deg2rad(lat1);
   const φ2 = deg2rad(lat2);
   const Δφ = deg2rad(lat2 - lat1);
   const Δλ = deg2rad(lon2 - lon1);
-
   const a =
-    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.sin(Δφ/2) * Math.sin(Δφ/2) +
     Math.cos(φ1) * Math.cos(φ2) *
-    Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-
+    Math.sin(Δλ/2) * Math.sin(Δλ/2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
 
-/**
- * Mark attendance for a user.
- * @param {string} userId     Firestore Users doc ID
- * @param {'checkin'|'checkout'} status
- * @param {number} lat        Employee latitude
- * @param {number} lng        Employee longitude
- * @returns {Promise<{ timestamp: string, note: string }>}
- */
-const markAttendance = async (userId, status, lat, lng) => {
-  // 1) Validate status
-  if (!['checkin', 'checkout'].includes(status)) {
+// Core attendance action
+async function markAttendance(userId, status, lat, lng) {
+  if (!['checkin','checkout'].includes(status)) {
     throw new Error('Trạng thái không hợp lệ');
   }
-  // 2) Validate coordinates
-  if (typeof lat !== 'number' || typeof lng !== 'number') {
+  if ((lat != null && typeof lat !== 'number') ||
+      (lng != null && typeof lng !== 'number')) {
     throw new Error('Thiếu hoặc sai định dạng vị trí');
   }
 
-  // 3) Read machine config from Firestore
-const { lat: machineLat, lng: machineLng, radius: threshold } = await getMachineConfig();
+  const now     = new Date();
+  const workday = isWorkday(now);
+  const weekend = isWeekend(now);
 
-  // 4) Distance check
-  const dist = getDistanceInMeters(machineLat, machineLng, lat, lng);
-  if (dist > threshold) {
-    throw new Error(`Vị trí không hợp lệ (cách máy ${dist.toFixed(1)} m, quá ngưỡng ${threshold} m)`);
-  }
-
-  // 3) Check for “forgotten checkout” from previous day
-  const last = await findLastAttendance(userId);
-  if (last && last.status === 'checkin') {
-    const lastDate = new Date(last.timestamp).toDateString();
-    const todayDate = new Date().toDateString();
-    if (lastDate !== todayDate) {
-      // auto‑checkout at midnight
-      const midnight = new Date();
-      midnight.setHours(0, 0, 0, 0);
-      await addAttendance({
-        userId,
-        timestamp: midnight.toISOString(),
-        status: 'checkout',
-        lat: machineLat,
-        lng: machineLng,
-        note: 'Auto‑checkout at 00:00'
-      });
+  // Location check for weekdays only
+  if (!weekend) {
+    const { lat: mLat, lng: mLng, radius } = await getMachineConfig();
+    const dist = getDistanceInMeters(mLat, mLng, lat, lng);
+    if (dist > radius) {
+      throw new Error(`Vị trí không hợp lệ (cách máy ${dist.toFixed(1)} m)`);  
     }
   }
 
-  // 4) Compute note for this new action
-  const now = new Date();
-  let note = '';
-  if (status === 'checkin') {
-    const sched = new Date(now); sched.setHours(8, 0, 0, 0);
-    const diffMin = Math.floor((now - sched)/60000);
-    if (diffMin > 0) note = `Late ${diffMin} minutes`;
-  } else {
-    const sched = new Date(now); sched.setHours(17, 0, 0, 0);
-    const diffMin = Math.floor((now - sched)/60000);
-    if (diffMin < 0)      note = `Early ${-diffMin} minutes`;
-    else if (diffMin > 0) note = `OT ${diffMin} minutes`;
+  // Autocheckout at midnight if forgot checkout on a workday
+  if (workday) {
+    const last = await findLastAttendance(userId);
+    if (last?.status === 'checkin') {
+      const lastDate  = new Date(last.timestamp).toDateString();
+      const todayDate = now.toDateString();
+      if (lastDate !== todayDate) {
+        await addAttendance({
+          userId,
+          timestamp: startOfDay(now).toISOString(),
+          status: 'checkout',
+          lat: null,
+          lng: null,
+          note: 'Autocheckout at 00:00'
+        });
+      }
+    }
   }
 
-  // 5) Persist the user’s intended record
-  const timestamp = now.toISOString();
-  await addAttendance({ userId, timestamp, status, lat, lng, note });
-  return { timestamp, note };
-};
+  // Compute note (early/late/OT), still record actual timestamp
+  let note = '';
+  if (status === 'checkin') {
+    const sched = new Date(now); sched.setHours(8,0,0,0);
+    const delta = Math.floor((now - sched) / 60000);
+    if (delta > 0)      note = `Late ${delta} minutes`;
+    else if (delta < 0) note = `Early ${Math.abs(delta)} minutes`;
+  } else { // checkout
+    const sched = new Date(now); sched.setHours(17,0,0,0);
+    const delta = Math.floor((now - sched) / 60000);
+    if (delta > 0)      note = `OT ${delta} minutes`;
+    else if (delta < 0) note = `Early ${Math.abs(delta)} minutes`;
+  }
 
-/**
- * Retrieve a user’s full attendance history.
- */
-const getUserAttendance = async (userId) => {
+  await addAttendance({
+    userId,
+    timestamp: now.toISOString(),
+    status,
+    lat,
+    lng,
+    note
+  });
+  return { timestamp: now.toISOString(), note };
+}
+
+// Fetch raw attendance history
+async function getUserAttendance(userId) {
   return await findAttendanceByUser(userId);
-};
+}
+
+// Build a month-view calendar with status + detail per day
+async function buildCalendar(userId, monthParam) {
+  // “YYYY-MM” or default to current month :contentReference[oaicite:1]{index=1}
+  const monthStr = monthParam || format(new Date(), 'yyyy-MM');
+  const [year, mon] = monthStr.split('-').map(Number);
+  const start = new Date(year, mon - 1, 1);
+  const end   = endOfMonth(start);
+
+  // Load all records once per user
+  const allAtt = await findAttendanceByUser(userId);
+  const calendar = [];
+
+  for (let dt = start; dt <= end; dt = addDays(dt,1)) {
+    const dayISO = dt.toISOString().slice(0,10);
+    const recs   = allAtt.filter(a => a.timestamp.startsWith(dayISO));
+    let status  = 'none';
+    let detail  = null;
+
+    if (isWorkday(dt)) {
+      // Must have both to be “present”
+      const ins  = recs.filter(r=>r.status==='checkin')
+                       .map(r=>new Date(r.timestamp));
+      const outs = recs.filter(r=>r.status==='checkout')
+                       .map(r=>new Date(r.timestamp));
+
+      if (ins.length && outs.length) {
+        status = 'present';
+
+        // Clamp earliest in to ≥08:00, latest out to ≤17:00
+        const day8  = new Date(dt); day8.setHours( 8,0,0,0);
+        const day17 = new Date(dt); day17.setHours(17,0,0,0);
+        const earliestIn = new Date(Math.min(...ins));
+        const latestOut   = new Date(Math.max(...outs));
+        const clampIn   = earliestIn  < day8  ? day8  : earliestIn;
+        const clampOut  = latestOut   > day17 ? day17 : latestOut;
+
+        // Compute worked hours
+        const hrsWorked = (clampOut - clampIn) / 36e5; // ms→h
+
+        if (hrsWorked >= 8) {
+          detail = 'full';
+        } else {
+          detail = `need more effort (${(8 - hrsWorked).toFixed(2)}h missing)`;
+        }
+      } else {
+        status = 'absent';
+        detail = 'absent';
+      }
+    } else {
+      // Weekend
+      status = recs.length ? 'ot' : 'none';
+      detail = recs.length ? 'ot' : null;
+    }
+
+    calendar.push({ date: dayISO, status, detail });
+  }
+
+  return { calendar };
+}
 
 module.exports = {
   markAttendance,
-  getUserAttendance
+  getUserAttendance,
+  isWorkday,
+  buildCalendar
 };

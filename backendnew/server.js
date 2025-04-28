@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors'); 
-
+require('./attendanceCron');
 
 const employeeAttendanceRoutes = require('./routes/employeeAttendanceRoutes');
 const managerRoutes = require('./routes/managerRoutes');
@@ -21,6 +21,8 @@ app.use(cors());
 // Đăng ký router
 
 app.use('/api/employee', employeeAttendanceRoutes);
+app.use('/api/employee', require('./routes/employeeAttendanceRoutes'));
+app.use('/api/manager',  require('./routes/managerAttendanceRoutes')); 
 
 app.use('/api/manager', managerRoutes);
 app.use('/api/employee', employeeRoutes);

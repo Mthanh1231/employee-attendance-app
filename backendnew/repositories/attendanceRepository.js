@@ -2,23 +2,14 @@
 const { db } = require('../configs/firebase');
 const attendanceCollection = db.collection('Attendance');
 
-/**
- * @param {Object} params
- * @param {string} params.userId
- * @param {string} params.timestamp    ISO string
- * @param {string} params.status       'checkin'|'checkout'
- * @param {number} params.lat
- * @param {number} params.lng
- * @param {string} params.note         e.g. 'Late 5 minutes', 'Early 10 minutes', 'OT 20 minutes'
- */
-
-const addAttendance = async ({ userId, timestamp, status, lat, lng }) => {
+const addAttendance = async ({ userId, timestamp, status, lat, lng, note }) => {
   await attendanceCollection.add({
     user_id: userId,
     timestamp,
     status,
     lat,
-    lng
+    lng,
+    note
   });
 };
 
@@ -43,8 +34,23 @@ const findLastAttendance = async (userId) => {
   return { id: doc.id, ...doc.data() };
 };
 
-module.exports = {
-  addAttendance,
-  findAttendanceByUser,
-  findLastAttendance
+// Lấy attendance của user trong ngày cụ thể
+const findAttendanceByDate = async (userId, date) => {
+  const dayStart = new Date(date);
+  dayStart.setHours(0,0,0,0);
+  const dayEnd = new Date(date);
+  dayEnd.setHours(23,59,59,999);
+  const snapshot = await attendanceCollection
+    .where('user_id','==',userId)
+    .where('timestamp','>=', dayStart.toISOString())
+    .where('timestamp','<=', dayEnd.toISOString())
+    .get();
+  const recs = { checkin: false, checkout: false, absent: false };
+  snapshot.forEach(doc => {
+    const { status } = doc.data();
+    recs[status] = true;
+  });
+  return recs;
 };
+
+module.exports = { addAttendance, findAttendanceByUser, findLastAttendance, findAttendanceByDate };
