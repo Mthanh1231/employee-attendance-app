@@ -53,4 +53,13 @@ const findAttendanceByDate = async (userId, date) => {
   return recs;
 };
 
-module.exports = { addAttendance, findAttendanceByUser, findLastAttendance, findAttendanceByDate };
+async function deleteAllAttendance() {
+  const snapshot = await attendanceCollection.get();
+  const batch = db.batch();
+  snapshot.docs.forEach(doc => {
+    batch.delete(doc.ref);
+  });
+  await batch.commit();
+}
+
+module.exports = { addAttendance, findAttendanceByUser, findLastAttendance, findAttendanceByDate, deleteAllAttendance  };

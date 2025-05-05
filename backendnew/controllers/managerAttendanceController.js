@@ -2,6 +2,7 @@
 const attendanceService = require('../services/attendanceService');
 const { getAllEmployees } = require('../repositories/employeeRepository');
 const { endOfMonth, addDays } = require('date-fns');
+const { deleteAllAttendance } = require('../repositories/attendanceRepository');
 
 async function getCalendarByUser(req, res) {
   try {
@@ -36,4 +37,14 @@ async function getAllCalendars(req, res) {
   }
 }
 
-module.exports = { getCalendarByUser, getAllCalendars };
+async function clearAllAttendance(req, res) {
+  try {
+    await deleteAllAttendance();
+    return res.json({ message: 'Đã xóa toàn bộ lịch sử chấm công' });
+  } catch (err) {
+    console.error('Xóa attendance lỗi:', err);
+    return res.status(500).json({ message: 'Xóa không thành công' });
+  }
+}
+
+module.exports = { getCalendarByUser, getAllCalendars, clearAllAttendance     };
