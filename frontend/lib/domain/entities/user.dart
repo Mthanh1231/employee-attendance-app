@@ -5,7 +5,7 @@ class User {
   final String phone;
   final String? employeeId;
 
-  const User({
+  User({
     required this.id,
     required this.email,
     required this.phone,

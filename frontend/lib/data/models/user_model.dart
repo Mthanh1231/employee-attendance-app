@@ -1,25 +1,25 @@
 // lib/data/models/user_model.dart
-import '../../domain/entities/user.dart';
+
+import 'package:flutter_attendance_clean/domain/entities/user.dart';
 
 class UserModel extends User {
-  const UserModel({
+  final String token;
+
+  UserModel({
     required String id,
     required String email,
     required String phone,
     String? employeeId,
-  }) : super(
-          id: id,
-          email: email,
-          phone: phone,
-          employeeId: employeeId,
-        );
+    required this.token,
+  }) : super(id: id, email: email, phone: phone, employeeId: employeeId);
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'] ?? '',
-      email: json['email'] ?? '',
-      phone: json['phone'] ?? '',
-      employeeId: json['employeeId'],
+      id: json['id'] as String,
+      email: json['email'] as String,
+      phone: json['phone'] as String,
+      employeeId: json['employeeId'] as String?,
+      token: json['token'] as String,
     );
   }
 
@@ -28,7 +28,8 @@ class UserModel extends User {
       'id': id,
       'email': email,
       'phone': phone,
-      'employeeId': employeeId,
+      if (employeeId != null) 'employeeId': employeeId,
+      'token': token,
     };
   }
 }

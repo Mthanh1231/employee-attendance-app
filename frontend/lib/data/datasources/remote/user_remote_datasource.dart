@@ -1,58 +1,70 @@
 // lib/data/datasources/remote/user_remote_datasource.dart
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:meta/meta.dart';
+import 'package:flutter_attendance_clean/core/network/http_client.dart';
+import 'package:flutter_attendance_clean/core/error/exceptions.dart';
+import 'package:flutter_attendance_clean/data/models/user_model.dart';
 
-import '../../../core/error/exceptions.dart';
-import '../../models/user_model.dart';
+abstract class UserRemoteDataSource {
+  Future<UserModel> register(String email, String phone, String password, String confirmPassword);
+  Future<String> login(String email, String password);
+  Future<UserModel> getProfile();
+}
 
-class UserRemoteDataSource {
-  final http.Client client;
-  final String baseUrl; // e.g. "http://10.0.2.2:3000/api"
+class UserRemoteDataSourceImpl implements UserRemoteDataSource {
+  final HttpClient client;
+  UserRemoteDataSourceImpl({required this.client});
 
-  UserRemoteDataSource({
-    required this.client,
-    required this.baseUrl,
-  });
-
-  Future<List<UserModel>> getAllUsers() async {
-    final response = await client.get(Uri.parse('$baseUrl/users/all'));
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body)['users'] as List;
-      return data.map((e) => UserModel.fromJson(e)).toList();
+  @override
+  Future<UserModel> register(String email, String phone, String password, String confirmPassword) async {
+    final body = jsonEncode({
+      'email': email,
+      'phone': phone,
+      'password': password,
+      'confirmPassword': confirmPassword,
+    });
+    final resp = await client.post('/api/employee/register', body: body);
+    if (resp.statusCode == 201) {
+      final data = jsonDecode(resp.body);
+      // backend chỉ trả employeeId và token
+      return UserModel(
+        id: data['employeeId'],
+        email: email,
+        phone: phone,
+        employeeId: data['employeeId'],
+        token: data['token'],
+      );
     } else {
-      throw ServerException('Failed to load users');
+      final msg = jsonDecode(resp.body)['message'] ?? 'Unknown error';
+      throw ServerException(msg);
     }
   }
 
+  @override
   Future<String> login(String email, String password) async {
-    final response = await client.post(
-      Uri.parse('$baseUrl/users/login'),
-      headers: {"Content-Type": "application/json"},
-      body: json.encode({"email": email, "password": password}),
-    );
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return data['token']; // Trả về token
+    final body = jsonEncode({ 'email': email, 'password': password });
+    final resp = await client.post('/api/employee/login', body: body);
+    if (resp.statusCode == 200) {
+      final data = jsonDecode(resp.body);
+      return data['token'];
     } else {
-      throw ServerException('Failed to login');
+      final msg = jsonDecode(resp.body)['message'] ?? 'Login failed';
+      throw ServerException(msg);
     }
   }
 
-  Future<void> register(String email, String phone, String password) async {
-    final response = await client.post(
-      Uri.parse('$baseUrl/users/register'),
-      headers: {"Content-Type": "application/json"},
-      body: json.encode({
-        "email": email,
-        "phone": phone,
-        "password": password,
-        "confirmPassword": password
-      }),
-    );
-    if (response.statusCode == 201) {
-      return; // Đăng ký thành công
+  @override
+  Future<UserModel> getProfile() async {
+    final resp = await client.get('/api/employee/profile');
+    if (resp.statusCode == 200) {
+      final data = jsonDecode(resp.body)['user'];
+      return UserModel.fromJson({
+        ...data,
+        'token': '', // token đã lưu trong HttpClient
+      });
     } else {
-      throw ServerException('Failed to register');
+      final msg = jsonDecode(resp.body)['message'] ?? 'Fetch profile failed';
+      throw ServerException(msg);
     }
   }
 }

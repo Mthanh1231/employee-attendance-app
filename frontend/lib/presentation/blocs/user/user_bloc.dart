@@ -1,48 +1,59 @@
 // lib/presentation/blocs/user/user_bloc.dart
+
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'user_event.dart';
-import 'user_state.dart';
-import '../../../domain/usecases/get_all_users.dart';
+import '../../../domain/entities/user.dart';
 import '../../../domain/usecases/login.dart';
 import '../../../domain/usecases/register.dart';
+import '../../../domain/repositories/user_repository.dart';
+import 'user_event.dart';
+import 'user_state.dart';
 
 class UserBloc extends Bloc<UserEvent, UserState> {
-  final GetAllUsers getAllUsersUseCase;
-  final Login loginUseCase;
+  final UserRepository repository;
   final Register registerUseCase;
+  final Login loginUseCase;
 
-  UserBloc({
-    required this.getAllUsersUseCase,
-    required this.loginUseCase,
-    required this.registerUseCase,
-  }) : super(UserInitial()) {
-    on<LoadAllUsers>((event, emit) async {
+  UserBloc(UserRepository repo)
+      : repository = repo,
+        registerUseCase = Register(repo),
+        loginUseCase = Login(repo),
+        super(UserInitial()) {
+    // Đăng ký user mới
+    on<RegisterUser>((e, emit) async {
       emit(UserLoading());
       try {
-        final users = await getAllUsersUseCase();
-        emit(UserLoaded(users));
-      } catch (e) {
-        emit(UserError(e.toString()));
+        final user = await registerUseCase(
+          e.email,
+          e.phone,
+          e.password,
+          e.confirmPassword,
+        );
+        emit(UserAuthenticated(user));
+      } catch (ex) {
+        emit(UserError(ex.toString()));
       }
     });
 
-    on<LoginUser>((event, emit) async {
+    // Login: lấy token rồi gọi LoadUserProfile
+    on<LoginUser>((e, emit) async {
       emit(UserLoading());
       try {
-        final token = await loginUseCase(event.email, event.password);
-        emit(UserLoggedIn(token));
-      } catch (e) {
-        emit(UserError(e.toString()));
+        await loginUseCase(e.email, e.password);
+        // token đã được set trong HttpClient
+        add(LoadUserProfile());
+      } catch (ex) {
+        emit(UserError(ex.toString()));
       }
     });
 
-    on<RegisterUser>((event, emit) async {
+    // Load profile thực: gọi repository.getProfile()
+    on<LoadUserProfile>((_, emit) async {
       emit(UserLoading());
       try {
-        await registerUseCase(event.email, event.phone, event.password);
-        emit(UserRegistered());
-      } catch (e) {
-        emit(UserError(e.toString()));
+        final User user = await repository.getProfile();
+        emit(UserAuthenticated(user));
+      } catch (ex) {
+        emit(UserError(ex.toString()));
       }
     });
   }

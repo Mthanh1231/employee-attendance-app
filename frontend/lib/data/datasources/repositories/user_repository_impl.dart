@@ -1,28 +1,33 @@
-// lib/data/repositories/user_repository_impl.dart
-import '../../../domain/entities/user.dart';
-import '../../../domain/repositories/user_repository.dart';
-import '../../../domain/usecases/register.dart';
-import '../../datasources/remote/user_remote_datasource.dart';
-import '../../models/user_model.dart';
+// lib/data/datasources/repositories/user_repository_impl.dart
+
+import 'dart:async';
+import 'package:flutter_attendance_clean/core/network/http_client.dart';
+import 'package:flutter_attendance_clean/data/datasources/remote/user_remote_datasource.dart';
+import 'package:flutter_attendance_clean/data/models/user_model.dart';
+import 'package:flutter_attendance_clean/domain/entities/user.dart';
+import 'package:flutter_attendance_clean/domain/repositories/user_repository.dart';
 
 class UserRepositoryImpl implements UserRepository {
-  final UserRemoteDataSource remoteDataSource;
+  final UserRemoteDataSource remote;
+  final HttpClient httpClient;
 
-  UserRepositoryImpl({required this.remoteDataSource});
+  UserRepositoryImpl({required this.remote, required this.httpClient});
 
   @override
-  Future<List<User>> getAllUsers() async {
-    final List<UserModel> models = await remoteDataSource.getAllUsers();
-    return models;
+  Future<User> register(String email, String phone, String password, String confirmPassword) async {
+    final userModel = await remote.register(email, phone, password, confirmPassword);
+    httpClient.setToken(userModel.token);
+    return userModel;
   }
 
   @override
-  Future<String> login(String email, String password) async {
-    return await remoteDataSource.login(email, password);
+  Future<void> login(String email, String password) async {
+    final token = await remote.login(email, password);
+    httpClient.setToken(token);
   }
 
   @override
-  Future<void> register(String email, String phone, String password) async {
-    await remoteDataSource.register(email, phone, password);
+  Future<User> getProfile() async {
+    return await remote.getProfile();
   }
 }

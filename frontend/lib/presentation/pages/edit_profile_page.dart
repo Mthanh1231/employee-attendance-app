@@ -1,165 +1,138 @@
+// lib/presentation/pages/edit_profile_page.dart
+
+import 'dart:typed_data';
+import 'dart:io' as io;                    // chỉ dùng trên mobile/desktop
+import 'package:flutter/foundation.dart'; // để dùng kIsWeb
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:image_picker/image_picker.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_attendance_clean/presentation/blocs/user/user_bloc.dart';
+import 'package:flutter_attendance_clean/presentation/blocs/user/user_event.dart';
+import 'package:flutter_attendance_clean/presentation/blocs/user/user_state.dart';
+
+import '../widgets/custom_button.dart';
 
 class EditProfilePage extends StatefulWidget {
-  final String token;
-  final String phone;
-  final String name;
-  final Map<String, dynamic> cccdInfo;
-
-  const EditProfilePage({
-    Key? key,
-    required this.token,
-    required this.phone,
-    required this.name,
-    required this.cccdInfo,
-  }) : super(key: key);
-
   @override
   State<EditProfilePage> createState() => _EditProfilePageState();
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  late TextEditingController phoneCtrl;
-  late TextEditingController nameCtrl;
-  late TextEditingController placeCtrl;
-  late TextEditingController dateCtrl;
-  late TextEditingController homeCtrl;
-  late TextEditingController cccdNameCtrl;
-  late TextEditingController imgCtrl;
-  late TextEditingController naCtrl;
-  late TextEditingController idCtrl;
-  late TextEditingController sCtrl;
-  late TextEditingController ddndCtrl;
-  late TextEditingController tgCtrl;
+  final _emailCtl = TextEditingController();
+  final _phoneCtl = TextEditingController();
+
+  // Trên web lưu bytes, trên mobile lưu File
+  Uint8List? _frontBytes;
+  Uint8List? _backBytes;
+  io.File?     _frontFile;
+  io.File?     _backFile;
+
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
-    phoneCtrl = TextEditingController(text: widget.phone);
-    nameCtrl = TextEditingController(text: widget.name);
-
-    placeCtrl = TextEditingController(text: widget.cccdInfo['place'] ?? '');
-    dateCtrl = TextEditingController(text: widget.cccdInfo['date'] ?? '');
-    homeCtrl = TextEditingController(text: widget.cccdInfo['home'] ?? '');
-    cccdNameCtrl = TextEditingController(text: widget.cccdInfo['cccd_name'] ?? '');
-    imgCtrl = TextEditingController(text: widget.cccdInfo['img'] ?? '');
-    naCtrl = TextEditingController(text: widget.cccdInfo['na'] ?? '');
-    idCtrl = TextEditingController(text: widget.cccdInfo['id'] ?? '');
-    sCtrl = TextEditingController(text: widget.cccdInfo['s'] ?? '');
-    ddndCtrl = TextEditingController(text: widget.cccdInfo['ddnd'] ?? '');
-    tgCtrl = TextEditingController(text: widget.cccdInfo['tg'] ?? '');
+    // Prefill email & phone nếu đã load profile
+    final state = context.read<UserBloc>().state;
+    if (state is UserAuthenticated) {
+      _emailCtl.text = state.user.email;
+      _phoneCtl.text = state.user.phone;
+    }
   }
 
-  Future<void> _save() async {
-    final body = {
-      "phone": phoneCtrl.text,
-      "name": nameCtrl.text,
-      "cccd_info": {
-        "place": placeCtrl.text,
-        "date": dateCtrl.text,
-        "home": homeCtrl.text,
-        "cccd_name": cccdNameCtrl.text,
-        "img": imgCtrl.text,
-        "na": naCtrl.text,
-        "id": idCtrl.text,
-        "s": sCtrl.text,
-        "ddnd": ddndCtrl.text,
-        "tg": tgCtrl.text
-      }
-    };
-    try {
-      final response = await http.put(
-        Uri.parse('http://localhost:3000/api/users/profile'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': widget.token
-        },
-        body: json.encode(body),
-      );
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cập nhật thành công!')),
-        );
-        Navigator.pop(context, true); // Báo cho ProfilePage reload
-      } else {
-        final data = json.decode(response.body);
-        final errMsg = data['message'] ?? 'Lỗi không xác định';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $errMsg')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Exception: $e')),
-      );
+  Future<void> _pickImage(bool isFront) async {
+    final XFile? picked = await _picker.pickImage(source: ImageSource.camera);
+    if (picked == null) return;
+
+    if (kIsWeb) {
+      // Web: đọc ra Uint8List
+      final bytes = await picked.readAsBytes();
+      setState(() {
+        if (isFront) _frontBytes = bytes;
+        else         _backBytes  = bytes;
+      });
+    } else {
+      // Mobile/Desktop: dùng File
+      final file = io.File(picked.path);
+      setState(() {
+        if (isFront) _frontFile = file;
+        else         _backFile  = file;
+      });
+    }
+  }
+
+  Widget _buildPreview({required Uint8List? bytes, required io.File? file}) {
+    if (kIsWeb) {
+      return bytes != null
+          ? Image.memory(bytes, height: 120, fit: BoxFit.cover)
+          : const Placeholder(fallbackHeight: 120);
+    } else {
+      return file != null
+          ? Image.file(file, height: 120, fit: BoxFit.cover)
+          : const Placeholder(fallbackHeight: 120);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Chỉnh sửa thông tin')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: phoneCtrl,
-              decoration: const InputDecoration(labelText: 'Phone'),
-            ),
-            TextField(
-              controller: nameCtrl,
-              decoration: const InputDecoration(labelText: 'Name'),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: placeCtrl,
-              decoration: const InputDecoration(labelText: 'CCCD place'),
-            ),
-            TextField(
-              controller: dateCtrl,
-              decoration: const InputDecoration(labelText: 'CCCD date'),
-            ),
-            TextField(
-              controller: homeCtrl,
-              decoration: const InputDecoration(labelText: 'CCCD home'),
-            ),
-            TextField(
-              controller: cccdNameCtrl,
-              decoration: const InputDecoration(labelText: 'CCCD name'),
-            ),
-            TextField(
-              controller: imgCtrl,
-              decoration: const InputDecoration(labelText: 'CCCD img'),
-            ),
-            TextField(
-              controller: naCtrl,
-              decoration: const InputDecoration(labelText: 'CCCD na'),
-            ),
-            TextField(
-              controller: idCtrl,
-              decoration: const InputDecoration(labelText: 'CCCD id'),
-            ),
-            TextField(
-              controller: sCtrl,
-              decoration: const InputDecoration(labelText: 'CCCD s'),
-            ),
-            TextField(
-              controller: ddndCtrl,
-              decoration: const InputDecoration(labelText: 'CCCD ddnd'),
-            ),
-            TextField(
-              controller: tgCtrl,
-              decoration: const InputDecoration(labelText: 'CCCD tg'),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _save,
-              child: const Text('Lưu'),
-            )
-          ],
+      appBar: AppBar(title: const Text('Edit Profile')),
+      body: BlocListener<UserBloc, UserState>(
+        listener: (ctx, state) {
+          if (state is UserError) {
+            ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(state.message)));
+          }
+          if (state is UserAuthenticated) {
+            Navigator.pop(context);
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: ListView(
+            children: [
+              TextField(
+                controller: _emailCtl,
+                decoration: const InputDecoration(labelText: 'Email'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _phoneCtl,
+                decoration: const InputDecoration(labelText: 'Phone'),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 24),
+
+              const Text('Scan CCCD Front:'),
+              const SizedBox(height: 8),
+              _buildPreview(bytes: _frontBytes, file: _frontFile),
+              const SizedBox(height: 8),
+              CustomButton(
+                label: 'Capture Front',
+                onPressed: () => _pickImage(true),
+              ),
+              const SizedBox(height: 24),
+
+              const Text('Scan CCCD Back:'),
+              const SizedBox(height: 8),
+              _buildPreview(bytes: _backBytes, file: _backFile),
+              const SizedBox(height: 8),
+              CustomButton(
+                label: 'Capture Back',
+                onPressed: () => _pickImage(false),
+              ),
+              const SizedBox(height: 24),
+
+              CustomButton(
+                label: 'Save Changes',
+                onPressed: () {
+                  // TODO: dispatch event UpdateProfile với _emailCtl.text,
+                  // _phoneCtl.text, và cả bytes/file tương ứng
+                  // ex: context.read<UserBloc>().add(UpdateProfile(...));
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

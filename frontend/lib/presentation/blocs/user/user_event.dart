@@ -1,17 +1,21 @@
 // lib/presentation/blocs/user/user_event.dart
-abstract class UserEvent {}
+import 'package:equatable/equatable.dart';
 
-class LoadAllUsers extends UserEvent {}
-
-class LoginUser extends UserEvent {
-  final String email;
-  final String password;
-  LoginUser(this.email, this.password);
+abstract class UserEvent extends Equatable {
+  @override
+  List<Object?> get props => [];
 }
 
 class RegisterUser extends UserEvent {
-  final String email;
-  final String phone;
-  final String password;
-  RegisterUser(this.email, this.phone, this.password);
+  final String email, phone, password, confirmPassword;
+  RegisterUser(this.email, this.phone, this.password, this.confirmPassword);
+  @override List<Object?> get props => [email, phone, password, confirmPassword];
 }
+
+class LoginUser extends UserEvent {
+  final String email, password;
+  LoginUser(this.email, this.password);
+  @override List<Object?> get props => [email, password];
+}
+
+class LoadUserProfile extends UserEvent {}

@@ -1,39 +1,46 @@
 // lib/presentation/pages/user_list_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../blocs/user/user_bloc.dart';
-import '../blocs/user/user_event.dart';
-import '../blocs/user/user_state.dart';
+import 'package:flutter_attendance_clean/presentation/blocs/user/user_bloc.dart';
+import 'package:flutter_attendance_clean/presentation/blocs/user/user_event.dart';
+import 'package:flutter_attendance_clean/presentation/blocs/user/user_state.dart';
+
 
 class UserListPage extends StatelessWidget {
-  const UserListPage({Key? key}) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
-    // Khi vào page, load danh sách user
-    context.read<UserBloc>().add(LoadAllUsers());
+    // If you implement GetAllUsers usecase:
+    // context.read<UserBloc>().add(LoadAllUsers());
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Danh sách nhân viên')),
+      appBar: AppBar(title: Text('User List')),
       body: BlocBuilder<UserBloc, UserState>(
-        builder: (context, state) {
+        builder: (ctx, state) {
           if (state is UserLoading) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (state is UserLoaded) {
-            return ListView.builder(
-              itemCount: state.users.length,
-              itemBuilder: (context, index) {
-                final user = state.users[index];
+            return Center(child: CircularProgressIndicator());
+          }
+          if (state is UserAuthenticated /* or a dedicated UsersLoaded state */) {
+            final users = [state.user]; // replace with actual list
+            if (users.isEmpty) {
+              return Center(child: Text('No users found'));
+            }
+            return ListView.separated(
+              itemCount: users.length,
+              separatorBuilder: (_, __) => Divider(),
+              itemBuilder: (_, idx) {
+                final u = users[idx];
                 return ListTile(
-                  title: Text(user.email),
-                  subtitle: Text('Phone: ${user.phone}'),
+                  title: Text(u.email),
+                  subtitle: Text('Phone: ${u.phone}\nEmpID: ${u.employeeId ?? '-'}'),
+                  isThreeLine: true,
                 );
               },
             );
-          } else if (state is UserError) {
+          }
+          if (state is UserError) {
             return Center(child: Text('Error: ${state.message}'));
           }
-          return const SizedBox();
+          return Center(child: Text('Load users'));
         },
       ),
     );

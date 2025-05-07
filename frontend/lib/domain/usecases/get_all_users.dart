@@ -4,10 +4,11 @@ import '../repositories/user_repository.dart';
 
 class GetAllUsers {
   final UserRepository repository;
-
   GetAllUsers(this.repository);
 
   Future<List<User>> call() async {
-    return await repository.getAllUsers();
+    // nếu backend có endpoint getAllUsers
+    // return await repository.getAllUsers();
+    throw UnimplementedError();
   }
 }

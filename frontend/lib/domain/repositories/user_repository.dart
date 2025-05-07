@@ -2,8 +2,7 @@
 import '../entities/user.dart';
 
 abstract class UserRepository {
-  Future<List<User>> getAllUsers();
-  Future<String> login(String email, String password);
-  Future<void> register(String email, String phone, String password);
-  // ...các hàm khác nếu cần (updateProfile, v.v.)
+  Future<User> register(String email, String phone, String password, String confirmPassword);
+  Future<void> login(String email, String password);
+  Future<User> getProfile();
 }

@@ -3,10 +3,10 @@ import '../repositories/user_repository.dart';
 
 class Login {
   final UserRepository repository;
-
   Login(this.repository);
 
-  Future<String> call(String email, String password) async {
-    return repository.login(email, password);
+  Future<void> call(String email, String password) async {
+    await repository.login(email, password);
   }
 }
+
