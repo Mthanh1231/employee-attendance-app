@@ -3,7 +3,6 @@
 import 'dart:async';
 import 'package:flutter_attendance_clean/core/network/http_client.dart';
 import 'package:flutter_attendance_clean/data/datasources/remote/user_remote_datasource.dart';
-import 'package:flutter_attendance_clean/data/models/user_model.dart';
 import 'package:flutter_attendance_clean/domain/entities/user.dart';
 import 'package:flutter_attendance_clean/domain/repositories/user_repository.dart';
 

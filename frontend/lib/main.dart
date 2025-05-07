@@ -10,8 +10,6 @@ import 'data/datasources/remote/attendance_remote_datasource.dart';
 import 'data/datasources/repositories/user_repository_impl.dart';
 import 'data/datasources/repositories/attendance_repository_impl.dart';
 
-import 'domain/repositories/user_repository.dart';
-import 'domain/repositories/attendance_repository.dart';
 
 import 'presentation/blocs/user/user_bloc.dart';
 import 'presentation/blocs/attendance/attendance_bloc.dart';
