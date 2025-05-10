@@ -18,6 +18,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
         emit(AttendanceError(ex.toString()));
       }
     });
+
     on<LoadAttendanceHistory>((_, emit) async {
       emit(AttendanceLoading());
       try {
@@ -27,6 +28,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
         emit(AttendanceError(ex.toString()));
       }
     });
+
     on<LoadAttendanceCalendar>((e, emit) async {
       emit(AttendanceLoading());
       try {

@@ -2,19 +2,28 @@
 class AttendanceRecord {
   final String id;
   final String timestamp;
+  final String status;
+  final double? lat;
+  final double? lng;
   final String note;
 
   AttendanceRecord({
     required this.id,
     required this.timestamp,
+    this.status = '',
+    this.lat,
+    this.lng,
     required this.note,
   });
 
   factory AttendanceRecord.fromJson(Map<String, dynamic> json) {
     return AttendanceRecord(
-      id: json['id'] as String,
-      timestamp: json['timestamp'] as String,
-      note: json['note'] as String? ?? '',
+      id: json['id'] ?? '',
+      timestamp: json['timestamp'] ?? '',
+      status: json['status'] ?? '',
+      lat: json['lat'] != null ? json['lat'].toDouble() : null,
+      lng: json['lng'] != null ? json['lng'].toDouble() : null,
+      note: json['note'] ?? '',
     );
   }
 }
