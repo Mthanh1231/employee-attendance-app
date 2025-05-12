@@ -5,9 +5,11 @@ import 'package:flutter_attendance_clean/core/error/exceptions.dart';
 import 'package:flutter_attendance_clean/data/models/user_model.dart';
 
 abstract class UserRemoteDataSource {
-  Future<UserModel> register(String email, String phone, String password, String confirmPassword);
-  Future<String> login(String email, String password);
+  Future<UserModel> register(
+      String email, String phone, String password, String confirmPassword);
+  Future<UserModel> login(String email, String password);
   Future<UserModel> getProfile();
+  Future<void> submitProfileUpdateRequest(Map<String, dynamic> data);
 }
 
 class UserRemoteDataSourceImpl implements UserRemoteDataSource {
@@ -15,7 +17,8 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   UserRemoteDataSourceImpl({required this.client});
 
   @override
-  Future<UserModel> register(String email, String phone, String password, String confirmPassword) async {
+  Future<UserModel> register(String email, String phone, String password,
+      String confirmPassword) async {
     final body = jsonEncode({
       'email': email,
       'phone': phone,
@@ -25,13 +28,13 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
     final resp = await client.post('/api/employee/register', body: body);
     if (resp.statusCode == 201) {
       final data = jsonDecode(resp.body);
-      // backend chỉ trả employeeId và token
+      // backend chỉ trả employeeId, không có token khi đăng ký
       return UserModel(
-        id: data['employeeId'],
+        id: data['employeeId'] ?? '',
         email: email,
         phone: phone,
-        employeeId: data['employeeId'],
-        token: data['token'],
+        employeeId: data['employeeId'] ?? '',
+        token: '', // Đăng ký chưa có token, để rỗng
       );
     } else {
       final msg = jsonDecode(resp.body)['message'] ?? 'Unknown error';
@@ -40,12 +43,20 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   }
 
   @override
-  Future<String> login(String email, String password) async {
-    final body = jsonEncode({ 'email': email, 'password': password });
+  Future<UserModel> login(String email, String password) async {
+    final body = jsonEncode({'email': email, 'password': password});
     final resp = await client.post('/api/employee/login', body: body);
+    print('Login response: ${resp.body}');
     if (resp.statusCode == 200) {
       final data = jsonDecode(resp.body);
-      return data['token'];
+      // backend trả về token, email, ...
+      return UserModel(
+        id: data['id'] ?? '',
+        email: data['email'] ?? email,
+        phone: data['phone'] ?? '',
+        employeeId: data['employeeId'] ?? '',
+        token: data['token'] ?? '',
+      );
     } else {
       final msg = jsonDecode(resp.body)['message'] ?? 'Login failed';
       throw ServerException(msg);
@@ -63,6 +74,18 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
       });
     } else {
       final msg = jsonDecode(resp.body)['message'] ?? 'Fetch profile failed';
+      throw ServerException(msg);
+    }
+  }
+
+  @override
+  Future<void> submitProfileUpdateRequest(Map<String, dynamic> data) async {
+    final body = jsonEncode(data);
+    final resp =
+        await client.post('/api/employee/profile-update-request', body: body);
+    if (resp.statusCode != 201) {
+      final msg = jsonDecode(resp.body)['message'] ??
+          'Failed to submit profile update request';
       throw ServerException(msg);
     }
   }

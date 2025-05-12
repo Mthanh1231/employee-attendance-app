@@ -4,14 +4,33 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_attendance_clean/presentation/blocs/user/user_bloc.dart';
 import 'package:flutter_attendance_clean/presentation/blocs/user/user_event.dart';
 import 'package:flutter_attendance_clean/presentation/blocs/user/user_state.dart';
+import 'package:flutter_attendance_clean/data/models/user_model.dart';
 
+class ProfilePage extends StatefulWidget {
+  @override
+  _ProfilePageState createState() => _ProfilePageState();
+}
 
-class ProfilePage extends StatelessWidget {
+class _ProfilePageState extends State<ProfilePage> {
+  bool _profileLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final userBloc = context.read<UserBloc>();
+    final state = userBloc.state;
+    if (state is UserAuthenticated && !_profileLoaded) {
+      // Ép kiểu user về UserModel để kiểm tra token
+      final user = state.user;
+      if (user is UserModel && user.token.isNotEmpty) {
+        userBloc.add(LoadUserProfile());
+        _profileLoaded = true;
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Trigger load profile when this page is shown
-    context.read<UserBloc>().add(LoadUserProfile());
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Profile', style: TextStyle(fontWeight: FontWeight.w600)),
@@ -22,12 +41,10 @@ class ProfilePage extends StatelessWidget {
       body: BlocConsumer<UserBloc, UserState>(
         listener: (ctx, state) {
           if (state is UserError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                behavior: SnackBarBehavior.floating,
-              )
-            );
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(state.message),
+              behavior: SnackBarBehavior.floating,
+            ));
           }
         },
         builder: (ctx, state) {
@@ -37,9 +54,11 @@ class ProfilePage extends StatelessWidget {
           if (state is UserAuthenticated) {
             final user = state.user;
             return SafeArea(
-              child: SingleChildScrollView(  // Thêm SingleChildScrollView ở đây
+              child: SingleChildScrollView(
+                // Thêm SingleChildScrollView ở đây
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -63,7 +82,9 @@ class ProfilePage extends StatelessWidget {
                             // Avatar placeholder
                             CircleAvatar(
                               radius: 40,
-                              backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
+                              backgroundColor: Theme.of(context)
+                                  .primaryColor
+                                  .withOpacity(0.2),
                               child: Icon(
                                 Icons.person,
                                 size: 40,
@@ -71,18 +92,21 @@ class ProfilePage extends StatelessWidget {
                               ),
                             ),
                             SizedBox(height: 16),
-                            
+
                             // User information
-                            _buildInfoRow(Icons.email_outlined, 'Email', user.email),
-                            _buildInfoRow(Icons.phone_outlined, 'Phone', user.phone),
+                            _buildInfoRow(
+                                Icons.email_outlined, 'Email', user.email),
+                            _buildInfoRow(
+                                Icons.phone_outlined, 'Phone', user.phone),
                             if (user.employeeId != null)
-                              _buildInfoRow(Icons.badge_outlined, 'Employee ID', user.employeeId!),
+                              _buildInfoRow(Icons.badge_outlined, 'Employee ID',
+                                  user.employeeId!),
                           ],
                         ),
                       ),
-                      
+
                       SizedBox(height: 32),
-                      
+
                       // Section title
                       Text(
                         'Quick Access',
@@ -92,9 +116,9 @@ class ProfilePage extends StatelessWidget {
                           color: Colors.black87,
                         ),
                       ),
-                      
+
                       SizedBox(height: 16),
-                      
+
                       // Feature buttons grid
                       GridView.count(
                         shrinkWrap: true,
@@ -120,7 +144,8 @@ class ProfilePage extends StatelessWidget {
                             context,
                             Icons.history_outlined,
                             'History',
-                            () => Navigator.pushNamed(context, '/attendance-history'),
+                            () => Navigator.pushNamed(
+                                context, '/attendance-history'),
                           ),
                           _buildFeatureCard(
                             context,
@@ -140,7 +165,8 @@ class ProfilePage extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.account_circle_outlined, size: 64, color: Colors.grey),
+                Icon(Icons.account_circle_outlined,
+                    size: 64, color: Colors.grey),
                 SizedBox(height: 16),
                 Text(
                   'Please login to view your profile',
@@ -161,7 +187,7 @@ class ProfilePage extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildInfoRow(IconData icon, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -192,8 +218,9 @@ class ProfilePage extends StatelessWidget {
       ),
     );
   }
-  
-  Widget _buildFeatureCard(BuildContext context, IconData icon, String label, VoidCallback onTap) {
+
+  Widget _buildFeatureCard(
+      BuildContext context, IconData icon, String label, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),

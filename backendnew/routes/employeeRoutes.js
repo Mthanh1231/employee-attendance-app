@@ -20,7 +20,7 @@ router.get ('/profile', authenticate, checkRole('employee'), getEmployeeProfile)
 router.post(
   '/cccd-scan/back',
   authenticate, checkRole('employee'),
-  upload.single('file'),
+  upload.single('image'),
   cccdScanBack
 );
 
@@ -28,7 +28,7 @@ router.post(
 router.post(
   '/cccd-scan/front',
   authenticate, checkRole('employee'),
-  upload.single('file'),
+  upload.single('image'),
   cccdScanFront
 );
 

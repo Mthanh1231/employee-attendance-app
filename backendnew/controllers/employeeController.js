@@ -36,6 +36,14 @@ const getEmployeeProfile = async (req, res) => {
 
 // Quét mặt sau
 const cccdScanBack = async (req, res) => {
+  console.log('--- Quét mặt sau ---');
+  console.log('Headers:', req.headers);
+  console.log('User:', req.user);
+  console.log('Body:', req.body);
+  console.log('File:', req.file);
+  if (!req.file) {
+    return res.status(400).json({ message: 'Không nhận được file' });
+  }
   try {
     const result = await processCccdImage(req.user.id, req.file.path, 'back');
     res.json({ message: 'Quét CCCD mặt sau thành công', result });
@@ -47,6 +55,10 @@ const cccdScanBack = async (req, res) => {
 
 // Quét mặt trước
 const cccdScanFront = async (req, res) => {
+  console.log('req.file:', req.file);
+  if (!req.file) {
+    return res.status(400).json({ message: 'Không nhận được file' });
+  }
   try {
     const result = await processCccdImage(req.user.id, req.file.path, 'front');
     res.json({ message: 'Quét CCCD mặt trước thành công', result });

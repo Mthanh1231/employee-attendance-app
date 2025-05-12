@@ -38,9 +38,8 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     on<LoginUser>((e, emit) async {
       emit(UserLoading());
       try {
-        await loginUseCase(e.email, e.password);
-        // token đã được set trong HttpClient
-        add(LoadUserProfile());
+        final user = await loginUseCase(e.email, e.password);
+        emit(UserAuthenticated(user));
       } catch (ex) {
         emit(UserError(ex.toString()));
       }
@@ -52,6 +51,22 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       try {
         final User user = await repository.getProfile();
         emit(UserAuthenticated(user));
+      } catch (ex) {
+        emit(UserError(ex.toString()));
+      }
+    });
+
+    // Xử lý yêu cầu cập nhật profile
+    on<UpdateProfileRequest>((e, emit) async {
+      emit(UserLoading());
+      try {
+        await repository.submitProfileUpdateRequest({
+          'email': e.email,
+          'phone': e.phone,
+          'note': e.note,
+          'cccd_info': e.cccdInfo,
+        });
+        emit(UserProfileUpdateRequested());
       } catch (ex) {
         emit(UserError(ex.toString()));
       }

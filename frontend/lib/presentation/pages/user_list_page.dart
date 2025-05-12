@@ -17,7 +17,8 @@ class UserListPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Danh sách người dùng', 
+        title: const Text(
+          'Danh sách người dùng',
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
         elevation: 0,
@@ -37,12 +38,10 @@ class UserListPage extends StatelessWidget {
       body: BlocConsumer<UserBloc, UserState>(
         listener: (context, state) {
           if (state is UserError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                behavior: SnackBarBehavior.floating,
-              )
-            );
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(state.message),
+              behavior: SnackBarBehavior.floating,
+            ));
           }
         },
         builder: (context, state) {
@@ -52,16 +51,16 @@ class UserListPage extends StatelessWidget {
             );
           } else if (state is UserAuthenticated /* hoặc UsersLoaded state */) {
             final users = [state.user]; // thay thế bằng danh sách thực tế
-            
+
             if (users.isEmpty) {
               return _buildEmptyState();
             }
-            
+
             return _buildUserList(users, context);
           } else if (state is UserError) {
             return _buildErrorState(state.message);
           }
-          
+
           return _buildInitialState();
         },
       ),
@@ -105,7 +104,8 @@ class UserListPage extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 30,
-                        backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
+                        backgroundColor:
+                            Theme.of(context).primaryColor.withOpacity(0.2),
                         child: Icon(
                           Icons.person,
                           size: 30,
@@ -185,7 +185,8 @@ class UserListPage extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton(BuildContext context, IconData icon, String label, Color color, VoidCallback onTap) {
+  Widget _buildActionButton(BuildContext context, IconData icon, String label,
+      Color color, VoidCallback onTap) {
     return TextButton.icon(
       icon: Icon(icon, size: 18, color: color),
       label: Text(label, style: TextStyle(color: color)),

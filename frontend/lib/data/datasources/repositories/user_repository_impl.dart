@@ -13,20 +13,28 @@ class UserRepositoryImpl implements UserRepository {
   UserRepositoryImpl({required this.remote, required this.httpClient});
 
   @override
-  Future<User> register(String email, String phone, String password, String confirmPassword) async {
-    final userModel = await remote.register(email, phone, password, confirmPassword);
+  Future<User> register(String email, String phone, String password,
+      String confirmPassword) async {
+    final userModel =
+        await remote.register(email, phone, password, confirmPassword);
     httpClient.setToken(userModel.token);
     return userModel;
   }
 
   @override
-  Future<void> login(String email, String password) async {
-    final token = await remote.login(email, password);
-    httpClient.setToken(token);
+  Future<User> login(String email, String password) async {
+    final userModel = await remote.login(email, password);
+    httpClient.setToken(userModel.token);
+    return userModel;
   }
 
   @override
   Future<User> getProfile() async {
     return await remote.getProfile();
+  }
+
+  @override
+  Future<void> submitProfileUpdateRequest(Map<String, dynamic> data) async {
+    await remote.submitProfileUpdateRequest(data);
   }
 }

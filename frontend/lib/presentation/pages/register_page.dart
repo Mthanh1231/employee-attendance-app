@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_attendance_clean/presentation/blocs/user/user_bloc.dart';
 import 'package:flutter_attendance_clean/presentation/blocs/user/user_event.dart';
 import 'package:flutter_attendance_clean/presentation/blocs/user/user_state.dart';
+import 'package:flutter_attendance_clean/presentation/pages/login_page.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -35,8 +36,20 @@ class _RegisterPageState extends State<RegisterPage> {
             );
           }
           if (state is UserAuthenticated) {
-            // After registration, navigate to profile
-            Navigator.pushReplacementNamed(context, '/profile');
+            // Reset Bloc NGAY LẬP TỨC trước khi show SnackBar hoặc chuyển trang
+            context.read<UserBloc>().emit(UserInitial());
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Đăng ký thành công! Vui lòng đăng nhập.'),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: Colors.green[700],
+              ),
+            );
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/login',
+              (route) => false,
+            );
           }
         },
         child: SafeArea(
@@ -58,16 +71,18 @@ class _RegisterPageState extends State<RegisterPage> {
                         constraints: BoxConstraints(),
                       ),
                     ),
-                    
+
                     SizedBox(height: 20),
-                    
+
                     // App Logo/Icon
                     Center(
                       child: Container(
                         height: 80,
                         width: 80,
                         decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor.withOpacity(0.1),
+                          color: Theme.of(
+                            context,
+                          ).primaryColor.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -77,9 +92,9 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                       ),
                     ),
-                    
+
                     SizedBox(height: 24),
-                    
+
                     // Register Title
                     Center(
                       child: Text(
@@ -91,7 +106,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                       ),
                     ),
-                    
+
                     Center(
                       child: Text(
                         'Register to get started',
@@ -102,9 +117,9 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                       ),
                     ),
-                    
+
                     SizedBox(height: 40),
-                    
+
                     // Email Field
                     _buildTextField(
                       controller: _emailCtl,
@@ -114,16 +129,18 @@ class _RegisterPageState extends State<RegisterPage> {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your email';
                         }
-                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                        if (!RegExp(
+                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                        ).hasMatch(value)) {
                           return 'Please enter a valid email';
                         }
                         return null;
                       },
                       keyboardType: TextInputType.emailAddress,
                     ),
-                    
+
                     SizedBox(height: 16),
-                    
+
                     // Phone Field
                     _buildTextField(
                       controller: _phoneCtl,
@@ -137,9 +154,9 @@ class _RegisterPageState extends State<RegisterPage> {
                       },
                       keyboardType: TextInputType.phone,
                     ),
-                    
+
                     SizedBox(height: 16),
-                    
+
                     // Password Field
                     _buildTextField(
                       controller: _passCtl,
@@ -157,7 +174,9 @@ class _RegisterPageState extends State<RegisterPage> {
                       },
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                          _obscurePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
                           color: Colors.grey[600],
                         ),
                         onPressed: () {
@@ -167,9 +186,9 @@ class _RegisterPageState extends State<RegisterPage> {
                         },
                       ),
                     ),
-                    
+
                     SizedBox(height: 16),
-                    
+
                     // Confirm Password Field
                     _buildTextField(
                       controller: _confirmCtl,
@@ -187,7 +206,9 @@ class _RegisterPageState extends State<RegisterPage> {
                       },
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                          _obscureConfirmPassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
                           color: Colors.grey[600],
                         ),
                         onPressed: () {
@@ -197,16 +218,14 @@ class _RegisterPageState extends State<RegisterPage> {
                         },
                       ),
                     ),
-                    
+
                     SizedBox(height: 40),
-                    
+
                     // Register Button
                     BlocBuilder<UserBloc, UserState>(
                       builder: (ctx, state) {
                         if (state is UserLoading) {
-                          return Center(
-                            child: CircularProgressIndicator(),
-                          );
+                          return Center(child: CircularProgressIndicator());
                         }
                         return ElevatedButton(
                           onPressed: () {
@@ -240,36 +259,39 @@ class _RegisterPageState extends State<RegisterPage> {
                         );
                       },
                     ),
-                    
+
                     SizedBox(height: 24),
-                    
+
                     // Login Option
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
                           "Already have an account? ",
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                          ),
+                          style: TextStyle(color: Colors.grey[600]),
                         ),
                         TextButton(
-                          onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+                          onPressed:
+                              () => Navigator.pushReplacementNamed(
+                                context,
+                                '/login',
+                              ),
                           child: Text(
                             'Sign In',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                           style: TextButton.styleFrom(
                             minimumSize: Size.zero,
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 0,
+                            ),
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
                         ),
                       ],
                     ),
-                    
+
                     SizedBox(height: 16),
                   ],
                 ),
@@ -311,7 +333,10 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 1),
+          borderSide: BorderSide(
+            color: Theme.of(context).primaryColor,
+            width: 1,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

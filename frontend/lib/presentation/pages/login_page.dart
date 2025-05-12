@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_attendance_clean/presentation/blocs/user/user_bloc.dart';
 import 'package:flutter_attendance_clean/presentation/blocs/user/user_event.dart';
 import 'package:flutter_attendance_clean/presentation/blocs/user/user_state.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_attendance_clean/data/models/user_model.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -21,7 +23,7 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: BlocListener<UserBloc, UserState>(
-        listener: (ctx, state) {
+        listener: (ctx, state) async {
           if (state is UserError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -32,6 +34,20 @@ class _LoginPageState extends State<LoginPage> {
             );
           }
           if (state is UserAuthenticated) {
+            // Lưu token vào SharedPreferences nếu có
+            try {
+              final user = state.user;
+              if (user is UserModel && user.token != null) {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setString('token', user.token);
+                print(
+                    'Đã lưu token vào SharedPreferences: [32m${user.token}[0m');
+              } else {
+                print('User không phải UserModel hoặc không có token!');
+              }
+            } catch (e) {
+              print('Không thể lưu token: $e');
+            }
             Navigator.pushReplacementNamed(context, '/profile');
           }
         },
@@ -45,14 +61,15 @@ class _LoginPageState extends State<LoginPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     SizedBox(height: 60),
-                    
+
                     // App Logo/Icon
                     Center(
                       child: Container(
                         height: 100,
                         width: 100,
                         decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor.withOpacity(0.1),
+                          color:
+                              Theme.of(context).primaryColor.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -62,9 +79,9 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-                    
+
                     SizedBox(height: 30),
-                    
+
                     // Welcome Text
                     Center(
                       child: Text(
@@ -76,7 +93,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-                    
+
                     Center(
                       child: Text(
                         'Sign in to continue',
@@ -87,9 +104,9 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-                    
+
                     SizedBox(height: 50),
-                    
+
                     // Email Field
                     _buildTextField(
                       controller: _emailCtl,
@@ -99,16 +116,17 @@ class _LoginPageState extends State<LoginPage> {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your email';
                         }
-                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                            .hasMatch(value)) {
                           return 'Please enter a valid email';
                         }
                         return null;
                       },
                       keyboardType: TextInputType.emailAddress,
                     ),
-                    
+
                     SizedBox(height: 20),
-                    
+
                     // Password Field
                     _buildTextField(
                       controller: _passCtl,
@@ -126,7 +144,9 @@ class _LoginPageState extends State<LoginPage> {
                       },
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                          _obscurePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
                           color: Colors.grey[600],
                         ),
                         onPressed: () {
@@ -136,9 +156,9 @@ class _LoginPageState extends State<LoginPage> {
                         },
                       ),
                     ),
-                    
+
                     SizedBox(height: 12),
-                    
+
                     // Forgot Password
                     Align(
                       alignment: Alignment.centerRight,
@@ -155,19 +175,22 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         style: TextButton.styleFrom(
                           minimumSize: Size.zero,
-                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
                       ),
                     ),
-                    
+
                     SizedBox(height: 40),
-                    
+
                     // Login Button
                     ElevatedButton(
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
-                          context.read<UserBloc>().add(LoginUser(_emailCtl.text, _passCtl.text));
+                          context
+                              .read<UserBloc>()
+                              .add(LoginUser(_emailCtl.text, _passCtl.text));
                         }
                       },
                       child: Padding(
@@ -187,9 +210,9 @@ class _LoginPageState extends State<LoginPage> {
                         elevation: 2,
                       ),
                     ),
-                    
+
                     SizedBox(height: 24),
-                    
+
                     // Register Option
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -213,7 +236,8 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           style: TextButton.styleFrom(
                             minimumSize: Size.zero,
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 0),
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
                         ),
@@ -259,7 +283,8 @@ class _LoginPageState extends State<LoginPage> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 1),
+          borderSide:
+              BorderSide(color: Theme.of(context).primaryColor, width: 1),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

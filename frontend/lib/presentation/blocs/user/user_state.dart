@@ -14,7 +14,8 @@ class UserLoading extends UserState {}
 class UserAuthenticated extends UserState {
   final User user;
   UserAuthenticated(this.user);
-  @override List<Object?> get props => [user];
+  @override
+  List<Object?> get props => [user];
 }
 
 class UserUnauthenticated extends UserState {}
@@ -22,5 +23,8 @@ class UserUnauthenticated extends UserState {}
 class UserError extends UserState {
   final String message;
   UserError(this.message);
-  @override List<Object?> get props => [message];
+  @override
+  List<Object?> get props => [message];
 }
+
+class UserProfileUpdateRequested extends UserState {}
