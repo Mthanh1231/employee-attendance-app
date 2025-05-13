@@ -41,9 +41,9 @@ const loginEmployee = async ({ email, password }) => {
   const validPassword = await bcrypt.compare(password, userData.password);
   if (!validPassword) throw new Error('Sai mật khẩu');
   
-  // Tạo token JWT dùng id (Firestore doc id) thay vì appId
+  // Sửa: Tạo token JWT với appId thay vì id
   const token = jwt.sign(
-    { id: userData.id, email: userData.email, role: 'employee' },
+    { appId: userData.id, email: userData.email, role: 'employee' },
     JWT_SECRET,
     { expiresIn: '1h' }
   );

@@ -7,9 +7,15 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
 // Manager login
 const loginManager = async ({ email, password }) => {
+  console.log('--- MANAGER LOGIN DEBUG ---');
+  console.log('Email input:', email);
   const managerData = await findManagerByEmail(email);
+  console.log('Manager data from Firestore:', managerData);
   if (!managerData) throw new Error('Manager email không tồn tại');
+  console.log('Password input:', password);
+  console.log('Password hash from DB:', managerData.password);
   const validPassword = await bcrypt.compare(password, managerData.password);
+  console.log('Password match result:', validPassword);
   if (!validPassword) throw new Error('Sai mật khẩu manager');
   
   // Tạo token JWT

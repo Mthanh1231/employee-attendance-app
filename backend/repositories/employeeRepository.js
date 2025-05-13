@@ -38,6 +38,11 @@ const findEmployeeByAppId = async (appId) => {
   return { appId: docRef.id, ...data };
 };
 
+// Loại bỏ các trường undefined khỏi object
+function removeUndefined(obj) {
+  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined));
+}
+
 // Cập nhật employee
 const updateEmployeeByAppId = async (appId, updateData) => {
   await employeeCollection.doc(appId).update(updateData);
@@ -48,7 +53,7 @@ const updateEmployeeById = async (userId, updateData) => {
   if (!userId || typeof userId !== 'string' || userId.trim() === '') {
     throw new Error('userId không hợp lệ khi cập nhật employee');
   }
-  await employeeCollection.doc(userId).update(updateData);
+  await employeeCollection.doc(userId).update(removeUndefined(updateData));
 };
 
 // Lấy danh sách employee
