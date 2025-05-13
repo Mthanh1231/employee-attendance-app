@@ -84,14 +84,16 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage>
             return const Center(child: Text('No attendance records found'));
           }
 
-          // Group by date
+          // Group by date (UTC, hiển thị local)
           final Map<String, List<dynamic>> groupedRecords = {};
           for (var rec in history) {
-            final date = _formatDate(rec.timestamp, 'yyyy-MM-dd');
-            if (!groupedRecords.containsKey(date)) {
-              groupedRecords[date] = [];
+            final dateUtc = DateTime.parse(rec.timestamp).toUtc();
+            final dateLocal = dateUtc.toLocal();
+            final dateKey = DateFormat('yyyy-MM-dd').format(dateLocal);
+            if (!groupedRecords.containsKey(dateKey)) {
+              groupedRecords[dateKey] = [];
             }
-            groupedRecords[date]!.add(rec);
+            groupedRecords[dateKey]!.add(rec);
           }
 
           final sortedDates = groupedRecords.keys.toList()
@@ -107,7 +109,8 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage>
                 margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 child: ExpansionTile(
                   title: Text(
-                    _formatDate(records.first.timestamp, 'EEEE, MMM dd, yyyy'),
+                    // Hiển thị ngày local
+                    DateFormat('EEEE, MMM dd, yyyy').format(DateTime.parse(records.first.timestamp).toUtc().toLocal()),
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   children: records.map<Widget>((rec) {
@@ -187,9 +190,8 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage>
         }
         if (state is AttendanceCalendarLoaded) {
           final calendar = state.calendar;
-          // Tạo map ngày -> AttendanceDay
           final Map<int, AttendanceDay> dayMap = {
-            for (var d in calendar) DateTime.parse(d.date).day: d
+            for (var d in calendar) DateTime.parse(d.date).toUtc().toLocal().day: d
           };
           final now = DateTime.parse('$_selectedMonth-01');
           final firstDay = DateTime(now.year, now.month, 1);
@@ -271,8 +273,12 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage>
                                           Icon(Icons.calendar_today,
                                               color: color),
                                           SizedBox(width: 8),
-                                          Text(
-                                              'Details for $dayNum/${now.month}/${now.year}'),
+                                          Flexible(
+                                            child: Text(
+                                              'Details for $dayNum/${now.month}/${now.year}',
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
                                         ],
                                       ),
                                       content: att == null
@@ -327,16 +333,19 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage>
                 ],
               ),
               SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildLegend(Colors.green, 'Present'),
-                  _buildLegend(Colors.red, 'Absent'),
-                  _buildLegend(Colors.orange, 'OT'),
-                  _buildLegend(Colors.grey, 'None'),
-                  _buildLegend(Colors.blue, 'Full'),
-                  _buildLegend(Colors.yellow[700]!, 'Late'),
-                ],
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildLegend(Colors.green, 'Present'),
+                    _buildLegend(Colors.red, 'Absent'),
+                    _buildLegend(Colors.orange, 'OT'),
+                    _buildLegend(Colors.grey, 'None'),
+                    _buildLegend(Colors.blue, 'Full'),
+                    _buildLegend(Colors.yellow[700]!, 'Need more effort'),
+                  ],
+                ),
               ),
             ],
           );
@@ -397,31 +406,27 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage>
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 6),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.calendar_today, color: color, size: 16),
           SizedBox(width: 4),
-          Text(label, style: TextStyle(fontSize: 12)),
+          Flexible(
+            fit: FlexFit.loose,
+            child: Text(label, style: TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis),
+          ),
         ],
       ),
     );
   }
 
-  Color _getCalendarColor(String status, String detail) {
-    switch (status) {
-      case 'present':
-        return Colors.green;
-      case 'absent':
-        return Colors.red;
-      case 'ot':
-        return Colors.orange;
-      case 'none':
-        return Colors.grey;
-      case 'full':
-        return Colors.blue;
-      default:
-        if (detail.toLowerCase().contains('late')) return Colors.yellow[700]!;
-        return Colors.grey;
-    }
+  Color _getCalendarColor(String status, String? detail) {
+    if (status == 'present' && detail == 'full') return Colors.blue;
+    if (status == 'present') return Colors.green;
+    if (status == 'absent') return Colors.red;
+    if (status == 'ot') return Colors.orange;
+    if (status == 'none') return Colors.grey;
+    if (detail == 'need more effort') return Colors.yellow[700]!;
+    return Colors.grey;
   }
 
   void _changeMonth(int delta) {
@@ -481,7 +486,7 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage>
 
   String _formatDate(String timestamp, String format) {
     try {
-      final date = DateTime.parse(timestamp);
+      final date = DateTime.parse(timestamp).toUtc().toLocal();
       return DateFormat(format).format(date);
     } catch (e) {
       return timestamp;

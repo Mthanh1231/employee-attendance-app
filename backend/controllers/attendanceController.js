@@ -28,24 +28,7 @@
   const getAttendanceCalendar = async (req, res) => {
     try {
       const { month } = req.query;
-      const [year, mon] = month.split('-').map(Number);
-      const start = new Date(year, mon - 1, 1);
-      const end = endOfMonth(start);
-      const allAtt = await attendanceService.getUserAttendance(req.user.id);
-      const calendar = [];
-
-      for (let dt = start; dt <= end; dt = addDays(dt, 1)) {
-        const dayStr = dt.toISOString().slice(0,10);
-        const recs = allAtt.filter(a => a.timestamp.startsWith(dayStr));
-        let status = 'none';
-        if (attendanceService.isWorkday(dt)) {
-          status = recs.some(r=>r.status==='checkin'&&r.status==='checkout') ? 'present' : 'absent';
-        } else {
-          status = recs.length ? 'ot' : 'none';
-        }
-        calendar.push({ date: dayStr, status });
-      }
-
+      const { calendar } = await attendanceService.buildCalendar(req.user.id, month);
       res.json({ calendar });
     } catch (err) {
       return res.status(400).json({ message: err.message });

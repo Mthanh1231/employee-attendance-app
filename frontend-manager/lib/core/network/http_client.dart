@@ -6,7 +6,7 @@ class HttpClient {
   final http.Client _client;
 
   HttpClient({
-    this.baseUrl = 'http://localhost:3000',
+    this.baseUrl = 'API_BASE_URL=http://192.168.1.100:3000',
     http.Client? client,
   }) : _client = client ?? http.Client();
 

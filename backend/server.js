@@ -4,6 +4,9 @@ const bodyParser = require('body-parser');
 const cors = require('cors'); 
 require('./attendanceCron');
 
+// Set timezone to Asia/Ho_Chi_Minh (Vietnam)
+process.env.TZ = 'Asia/Ho_Chi_Minh';
+
 const employeeAttendanceRoutes = require('./routes/employeeAttendanceRoutes');
 const managerRoutes = require('./routes/managerRoutes');
 const employeeRoutes = require('./routes/employeeRoutes');

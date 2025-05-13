@@ -1,3 +1,16 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        // ← This is where you specify the AGP version
+        classpath 'com.android.tools.build:gradle:8.6.0'
+    }
+}
+
+// All projects (app + plugins) fetch dependencies from here.
 allprojects {
     repositories {
         google()
@@ -5,14 +18,15 @@ allprojects {
     }
 }
 
+// Customize build directories so they live outside of android/.
 rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
-}
-subprojects {
+    // Ensure :app is evaluated first (needed for some plugins).
     project.evaluationDependsOn(":app")
 }
 
+// A convenient clean task that deletes the root build folder.
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }

@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_attendance_clean/core/utils/timezone_helper.dart';
 
 import 'core/network/http_client.dart';
 import 'data/datasources/remote/user_remote_datasource.dart';
@@ -25,6 +26,7 @@ import 'presentation/pages/user_list_page.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load();  // loads "./.env"
+  TimezoneHelper.initialize();
   
   final httpClient = HttpClient();
   final userRemote = UserRemoteDataSourceImpl(client: httpClient);

@@ -34,6 +34,29 @@ class _AttendancePageState extends State<AttendancePage> {
   }
 
   Future<Position> _determinePosition() async {
+    LocationPermission permission;
+
+    // Kiểm tra dịch vụ vị trí đã bật chưa
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      throw Exception('Location services are disabled.');
+    }
+
+    // Kiểm tra quyền
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        throw Exception('Location permissions are denied');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      throw Exception(
+          'Location permissions are permanently denied, we cannot request permissions.');
+    }
+
+    // Lấy vị trí
     return await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
     );
@@ -189,6 +212,9 @@ class _AttendancePageState extends State<AttendancePage> {
             Future.delayed(const Duration(milliseconds: 500), () {
               if (mounted) {
                 context.read<AttendanceBloc>().add(LoadAttendanceHistory());
+                // Reload calendar view
+                final currentMonth = DateFormat('yyyy-MM').format(DateTime.now());
+                context.read<AttendanceBloc>().add(LoadAttendanceCalendar(currentMonth));
               }
             });
           }
