@@ -310,17 +310,6 @@ class _AttendancePageState extends State<AttendancePage> {
                         type: 'checkin',
                         isLoading: state is AttendanceLoading,
                         isDisabled: _hasCheckedInToday,
-                        onSuccess: () {
-                          setState(() {
-                            _hasCheckedInToday = true;
-                            _lastCheckin = AttendanceRecord(
-                              id: DateTime.now().toString(),
-                              timestamp: DateTime.now().toIso8601String(),
-                              status: 'checkin',
-                              note: 'Just checked in',
-                            );
-                          });
-                        },
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -335,17 +324,6 @@ class _AttendancePageState extends State<AttendancePage> {
                         type: 'checkout',
                         isLoading: state is AttendanceLoading,
                         isDisabled: !_hasCheckedInToday || _hasCheckedOutToday,
-                        onSuccess: () {
-                          setState(() {
-                            _hasCheckedOutToday = true;
-                            _lastCheckout = AttendanceRecord(
-                              id: DateTime.now().toString(),
-                              timestamp: DateTime.now().toIso8601String(),
-                              status: 'checkout',
-                              note: 'Just checked out',
-                            );
-                          });
-                        },
                       ),
                     ),
                   ],
@@ -426,7 +404,6 @@ class _AttendancePageState extends State<AttendancePage> {
     required String type,
     required bool isLoading,
     required bool isDisabled,
-    Function? onSuccess,
   }) {
     return ElevatedButton(
       onPressed: (isLoading || isDisabled)
@@ -436,11 +413,6 @@ class _AttendancePageState extends State<AttendancePage> {
                 final pos = await _determinePosition();
                 final bloc = context.read<AttendanceBloc>();
                 bloc.add(MarkAttendance(type, pos.latitude, pos.longitude));
-
-                // Immediately update UI state to give user feedback
-                if (onSuccess != null) {
-                  onSuccess();
-                }
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(

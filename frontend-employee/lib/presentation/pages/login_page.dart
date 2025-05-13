@@ -17,6 +17,7 @@ class _LoginPageState extends State<LoginPage> {
   final _passCtl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
+  bool _navigated = false;
 
   @override
   Widget build(BuildContext context) {
@@ -34,21 +35,24 @@ class _LoginPageState extends State<LoginPage> {
             );
           }
           if (state is UserAuthenticated) {
-            // Lưu token vào SharedPreferences nếu có
-            try {
-              final user = state.user;
-              if (user is UserModel && user.token != null) {
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.setString('token', user.token);
-                print(
-                    'Đã lưu token vào SharedPreferences: [32m${user.token}[0m');
-              } else {
-                print('User không phải UserModel hoặc không có token!');
-              }
-            } catch (e) {
-              print('Không thể lưu token: $e');
+            final user = state.user;
+            if (user is UserModel &&
+                user.token != null &&
+                user.token.isNotEmpty &&
+                !_navigated) {
+              // Đăng nhập xong, lưu token và gọi LoadUserProfile
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setString('token', user.token);
+              print(
+                  'Đã lưu token vào SharedPreferences: [32m[0m${user.token}');
+              context.read<UserBloc>().add(LoadUserProfile());
+            } else if (user is UserModel &&
+                (user.token == null || user.token.isEmpty) &&
+                !_navigated) {
+              // Đã lấy profile mới nhất, chuyển sang /profile
+              _navigated = true;
+              Navigator.pushReplacementNamed(context, '/profile');
             }
-            Navigator.pushReplacementNamed(context, '/profile');
           }
         },
         child: SafeArea(

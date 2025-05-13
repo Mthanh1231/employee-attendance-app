@@ -55,7 +55,6 @@ class _ProfilePageState extends State<ProfilePage> {
             final user = state.user;
             return SafeArea(
               child: SingleChildScrollView(
-                // Thêm SingleChildScrollView ở đây
                 child: Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -92,8 +91,6 @@ class _ProfilePageState extends State<ProfilePage> {
                               ),
                             ),
                             SizedBox(height: 16),
-
-                            // User information
                             _buildInfoRow(
                                 Icons.email_outlined, 'Email', user.email),
                             _buildInfoRow(
@@ -101,6 +98,48 @@ class _ProfilePageState extends State<ProfilePage> {
                             if (user.employeeId != null)
                               _buildInfoRow(Icons.badge_outlined, 'Employee ID',
                                   user.employeeId!),
+                            if (user.name != null)
+                              _buildInfoRow(
+                                  Icons.person_outline, 'Name', user.name),
+                            if (user.date != null)
+                              _buildInfoRow(Icons.cake_outlined,
+                                  'Date of Birth', user.date),
+                            if (user.note != null)
+                              _buildInfoRow(
+                                  Icons.note_outlined, 'Note', user.note),
+                            if (user.home != null)
+                              _buildInfoRow(
+                                  Icons.home_outlined, 'Home', user.home),
+                            if (user.place != null)
+                              _buildInfoRow(
+                                  Icons.place_outlined, 'Place', user.place),
+                            if (user.na != null)
+                              _buildInfoRow(
+                                  Icons.flag_outlined, 'Nationality', user.na),
+                            if (user.s != null)
+                              _buildInfoRow(
+                                  Icons.male_outlined, 'Gender', user.s),
+                            if (user.ddnd != null)
+                              _buildInfoRow(Icons.info_outline,
+                                  'Đặc điểm nhận dạng', user.ddnd),
+                            if (user.img != null)
+                              _buildInfoRow(
+                                  Icons.image_outlined, 'Image', user.img),
+                            if (user.tg != null)
+                              _buildInfoRow(
+                                  Icons.timer_outlined, 'TG', user.tg),
+                            if (user.role != null)
+                              _buildInfoRow(
+                                  Icons.security_outlined, 'Role', user.role),
+                            if (user.cccdInfo != null) ...[
+                              const SizedBox(height: 8),
+                              const Text('CCCD Info:',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                              ...user.cccdInfo!.entries.map((e) =>
+                                  _buildInfoRow(Icons.credit_card, e.key,
+                                      e.value?.toString() ?? '')),
+                            ],
                           ],
                         ),
                       ),
@@ -146,12 +185,6 @@ class _ProfilePageState extends State<ProfilePage> {
                             'History',
                             () => Navigator.pushNamed(
                                 context, '/attendance-history'),
-                          ),
-                          _buildFeatureCard(
-                            context,
-                            Icons.people_outline,
-                            'User List',
-                            () => Navigator.pushNamed(context, '/user-list'),
                           ),
                         ],
                       ),

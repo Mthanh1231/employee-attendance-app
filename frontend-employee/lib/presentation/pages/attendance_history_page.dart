@@ -7,13 +7,15 @@ import 'package:intl/intl.dart';
 import 'package:flutter_attendance_clean/presentation/blocs/attendance/attendance_bloc.dart';
 import 'package:flutter_attendance_clean/presentation/blocs/attendance/attendance_event.dart';
 import 'package:flutter_attendance_clean/presentation/blocs/attendance/attendance_state.dart';
+import 'package:flutter_attendance_clean/data/models/attendance_model.dart';
 
 class AttendanceHistoryPage extends StatefulWidget {
   @override
   _AttendanceHistoryPageState createState() => _AttendanceHistoryPageState();
 }
 
-class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> with SingleTickerProviderStateMixin {
+class _AttendanceHistoryPageState extends State<AttendanceHistoryPage>
+    with SingleTickerProviderStateMixin {
   TabController? _tabController;
   String _selectedMonth = DateFormat('yyyy-MM').format(DateTime.now());
   final List<String> _statusFilters = ['All', 'Checkin', 'Checkout', 'Absent'];
@@ -54,7 +56,8 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> with Sing
           ),
           IconButton(
             icon: Icon(Icons.refresh),
-            onPressed: () => context.read<AttendanceBloc>().add(LoadAttendanceHistory()),
+            onPressed: () =>
+                context.read<AttendanceBloc>().add(LoadAttendanceHistory()),
           ),
         ],
       ),
@@ -76,11 +79,11 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> with Sing
         }
         if (state is AttendanceHistoryLoaded) {
           final history = _filterAttendance(state.history);
-          
+
           if (history.isEmpty) {
             return const Center(child: Text('No attendance records found'));
           }
-          
+
           // Group by date
           final Map<String, List<dynamic>> groupedRecords = {};
           for (var rec in history) {
@@ -91,7 +94,8 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> with Sing
             groupedRecords[date]!.add(rec);
           }
 
-          final sortedDates = groupedRecords.keys.toList()..sort((a, b) => b.compareTo(a));
+          final sortedDates = groupedRecords.keys.toList()
+            ..sort((a, b) => b.compareTo(a));
 
           return ListView.builder(
             itemCount: sortedDates.length,
@@ -119,10 +123,13 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> with Sing
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('Error: ${state.message}', style: TextStyle(color: Colors.red)),
+                Text('Error: ${state.message}',
+                    style: TextStyle(color: Colors.red)),
                 SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () => context.read<AttendanceBloc>().add(LoadAttendanceHistory()),
+                  onPressed: () => context
+                      .read<AttendanceBloc>()
+                      .add(LoadAttendanceHistory()),
                   child: Text('Retry'),
                 ),
               ],
@@ -138,7 +145,7 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> with Sing
   Widget _buildAttendanceItem(dynamic rec) {
     final IconData icon;
     final Color color;
-    
+
     if (rec.status == 'checkin') {
       icon = Icons.login;
       color = _getColorForNote(rec.note);
@@ -178,9 +185,18 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> with Sing
         if (state is AttendanceLoading) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (state is AttendanceHistoryLoaded) {
-          // Here we'd normally use the Calendar API endpoint
-          // but for now we'll display a placeholder with a month picker
+        if (state is AttendanceCalendarLoaded) {
+          final calendar = state.calendar;
+          // Tạo map ngày -> AttendanceDay
+          final Map<int, AttendanceDay> dayMap = {
+            for (var d in calendar) DateTime.parse(d.date).day: d
+          };
+          final now = DateTime.parse('$_selectedMonth-01');
+          final firstDay = DateTime(now.year, now.month, 1);
+          final lastDay = DateTime(now.year, now.month + 1, 0);
+          final daysInMonth = lastDay.day;
+          final firstWeekday = firstDay.weekday % 7;
+          final totalCells = ((firstWeekday + daysInMonth) / 7).ceil() * 7;
           return Column(
             children: [
               Padding(
@@ -194,10 +210,9 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> with Sing
                     ),
                     SizedBox(width: 8),
                     Text(
-                      DateFormat('MMMM yyyy').format(
-                        DateTime.parse('$_selectedMonth-01')
-                      ),
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      DateFormat('MMMM yyyy').format(firstDay),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     SizedBox(width: 8),
                     IconButton(
@@ -207,32 +222,206 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> with Sing
                   ],
                 ),
               ),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    'Calendar view will be implemented soon.\nPlease use the List View tab for now.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16),
+              Table(
+                border: TableBorder.all(color: Colors.grey[200]!),
+                children: [
+                  TableRow(
+                    children: List.generate(
+                        7,
+                        (i) => Center(
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 8),
+                                child: Text(
+                                    [
+                                      'Sun',
+                                      'Mon',
+                                      'Tue',
+                                      'Wed',
+                                      'Thu',
+                                      'Fri',
+                                      'Sat'
+                                    ][i],
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold)),
+                              ),
+                            )),
                   ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: ElevatedButton(
-                  onPressed: () {
-                    context.read<AttendanceBloc>().add(
-                      LoadAttendanceCalendar(_selectedMonth)
+                  ...List.generate((totalCells / 7).ceil(), (week) {
+                    return TableRow(
+                      children: List.generate(7, (i) {
+                        final cell = week * 7 + i;
+                        final dayNum = cell - firstWeekday + 1;
+                        if (cell < firstWeekday || dayNum > daysInMonth) {
+                          return Container(height: 56);
+                        }
+                        final att = dayMap[dayNum];
+                        final status = att?.status ?? 'none';
+                        final detail = att?.detail ?? '';
+                        final color = _getCalendarColor(status, detail);
+                        return GestureDetector(
+                          onTap: att == null
+                              ? null
+                              : () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      title: Row(
+                                        children: [
+                                          Icon(Icons.calendar_today,
+                                              color: color),
+                                          SizedBox(width: 8),
+                                          Text(
+                                              'Details for $dayNum/${now.month}/${now.year}'),
+                                        ],
+                                      ),
+                                      content: att == null
+                                          ? Text('No data')
+                                          : Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text('Status: $status',
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold)),
+                                                if (detail.isNotEmpty) ...[
+                                                  SizedBox(height: 8),
+                                                  Text('Detail: $detail'),
+                                                ],
+                                              ],
+                                            ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(ctx),
+                                          child: Text('Close'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                          child: Container(
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: color.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            margin: const EdgeInsets.all(4),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.calendar_today,
+                                    color: color, size: 20),
+                                Text('$dayNum',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: color)),
+                              ],
+                            ),
+                          ),
+                        );
+                      }),
                     );
-                  },
-                  child: Text('Load Calendar Data'),
-                ),
+                  }),
+                ],
+              ),
+              SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildLegend(Colors.green, 'Present'),
+                  _buildLegend(Colors.red, 'Absent'),
+                  _buildLegend(Colors.orange, 'OT'),
+                  _buildLegend(Colors.grey, 'None'),
+                  _buildLegend(Colors.blue, 'Full'),
+                  _buildLegend(Colors.yellow[700]!, 'Late'),
+                ],
               ),
             ],
           );
         }
-        return const Center(child: Text('No calendar data available'));
+        // Nếu chưa có dữ liệu calendar, cho phép load
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.arrow_back),
+                    onPressed: () => _changeMonth(-1),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    DateFormat('MMMM yyyy')
+                        .format(DateTime.parse('$_selectedMonth-01')),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(width: 8),
+                  IconButton(
+                    icon: Icon(Icons.arrow_forward),
+                    onPressed: () => _changeMonth(1),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Center(
+                child: Text(
+                  'Calendar view will be implemented soon.\nPlease use the List View tab for now.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton(
+                onPressed: () {
+                  context
+                      .read<AttendanceBloc>()
+                      .add(LoadAttendanceCalendar(_selectedMonth));
+                },
+                child: Text('Load Calendar Data'),
+              ),
+            ),
+          ],
+        );
       },
     );
+  }
+
+  Widget _buildLegend(Color color, String label) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: Row(
+        children: [
+          Icon(Icons.calendar_today, color: color, size: 16),
+          SizedBox(width: 4),
+          Text(label, style: TextStyle(fontSize: 12)),
+        ],
+      ),
+    );
+  }
+
+  Color _getCalendarColor(String status, String detail) {
+    switch (status) {
+      case 'present':
+        return Colors.green;
+      case 'absent':
+        return Colors.red;
+      case 'ot':
+        return Colors.orange;
+      case 'none':
+        return Colors.grey;
+      case 'full':
+        return Colors.blue;
+      default:
+        if (detail.toLowerCase().contains('late')) return Colors.yellow[700]!;
+        return Colors.grey;
+    }
   }
 
   void _changeMonth(int delta) {
@@ -284,7 +473,7 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> with Sing
 
   List<dynamic> _filterAttendance(List<dynamic> history) {
     if (_currentFilter == 'All') return history;
-    
+
     return history.where((rec) {
       return rec.status.toLowerCase() == _currentFilter.toLowerCase();
     }).toList();
