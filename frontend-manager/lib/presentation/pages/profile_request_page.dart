@@ -3,13 +3,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../data/models/cccd_info_model.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-Future<List<Map<String, dynamic>>> fetchProfileRequests() async {
+Future<List<dynamic>> fetchProfileRequests() async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('token');
   if (token == null) return [];
+
   final response = await http.get(
-    Uri.parse('http://localhost:3000/api/manager/profile-update-requests'),
+    Uri.parse(
+        '${dotenv.env['API_BASE_URL']}/api/manager/profile-update-requests'),
     headers: {
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
@@ -17,32 +20,33 @@ Future<List<Map<String, dynamic>>> fetchProfileRequests() async {
   );
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
+    if (data is Map && data['requests'] is List) {
+      return data['requests'];
+    }
     if (data is List) {
-      return List<Map<String, dynamic>>.from(data);
-    } else if (data['requests'] is List) {
-      return List<Map<String, dynamic>>.from(data['requests']);
+      return data;
     }
   }
   return [];
 }
 
-Future<bool> processProfileRequest(
-    String requestId, String action, String managerNotes) async {
+Future<bool> processRequest(String requestId, String status) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('token');
   if (token == null) return false;
+
+  final body = jsonEncode({'status': status});
+  print('Body gửi lên: $body');
   final response = await http.put(
     Uri.parse(
-        'http://localhost:3000/api/manager/profile-update-requests/$requestId'),
+        '${dotenv.env['API_BASE_URL']}/api/manager/profile-update-requests/$requestId'),
     headers: {
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
     },
-    body: jsonEncode({
-      'decision': action,
-      'managerNotes': managerNotes,
-    }),
+    body: body,
   );
+  print('processRequest: status=${response.statusCode}, body=${response.body}');
   return response.statusCode == 200;
 }
 
@@ -55,7 +59,7 @@ class ProfileRequestPage extends StatefulWidget {
 }
 
 class _ProfileRequestPageState extends State<ProfileRequestPage> {
-  late Future<List<Map<String, dynamic>>> _futureRequests;
+  late Future<List<dynamic>> _futureRequests;
 
   @override
   void initState() {
@@ -93,7 +97,7 @@ class _ProfileRequestPageState extends State<ProfileRequestPage> {
           ),
         ],
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
+      body: FutureBuilder<List<dynamic>>(
         future: _futureRequests,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -162,9 +166,22 @@ class _ProfileRequestPageState extends State<ProfileRequestPage> {
                           const SizedBox(width: 8),
                           ElevatedButton(
                             onPressed: () async {
-                              final ok = await processProfileRequest(
-                                  req['id'], 'approved', noteController.text);
-                              if (ok) _refresh();
+                              const status = 'approved';
+                              print('Gửi status: $status');
+                              final ok =
+                                  await processRequest(req['id'], status);
+                              if (ok) {
+                                _refresh();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text('Duyệt thành công!')),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text('Duyệt thất bại!')),
+                                );
+                              }
                             },
                             style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.green),
@@ -173,9 +190,22 @@ class _ProfileRequestPageState extends State<ProfileRequestPage> {
                           const SizedBox(width: 8),
                           ElevatedButton(
                             onPressed: () async {
-                              final ok = await processProfileRequest(
-                                  req['id'], 'denied', noteController.text);
-                              if (ok) _refresh();
+                              const status = 'denied';
+                              print('Gửi status: $status');
+                              final ok =
+                                  await processRequest(req['id'], status);
+                              if (ok) {
+                                _refresh();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text('Từ chối thành công!')),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text('Từ chối thất bại!')),
+                                );
+                              }
                             },
                             style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.red),

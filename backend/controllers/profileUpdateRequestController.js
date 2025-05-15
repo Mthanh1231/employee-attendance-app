@@ -23,8 +23,8 @@ const getProfileUpdateRequests = async (req, res) => {
 const processProfileUpdateRequest = async (req, res) => {
   try {
     const { requestId } = req.params;
-    const { decision, managerNotes } = req.body;
-    await svc.processProfileUpdateRequest(requestId, decision, managerNotes);
+    const { status, managerNotes } = req.body;
+    await svc.processProfileUpdateRequest(requestId, status, managerNotes);
     res.json({ message: 'Request đã được xử lý' });
   } catch (e) {
     res.status(400).json({ message: e.message });

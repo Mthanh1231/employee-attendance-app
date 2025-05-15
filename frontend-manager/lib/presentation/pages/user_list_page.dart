@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-Future<List<Map<String, dynamic>>> fetchEmployees() async {
+Future<List<dynamic>> fetchEmployees() async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('token');
   if (token == null) return [];
+
   final response = await http.get(
-    Uri.parse('http://localhost:3000/api/manager/employees'),
+    Uri.parse('${dotenv.env['API_BASE_URL']}/api/manager/employees'),
     headers: {
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
@@ -16,10 +18,11 @@ Future<List<Map<String, dynamic>>> fetchEmployees() async {
   );
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
+    if (data is Map && data['employees'] is List) {
+      return data['employees'];
+    }
     if (data is List) {
-      return List<Map<String, dynamic>>.from(data);
-    } else if (data['employees'] is List) {
-      return List<Map<String, dynamic>>.from(data['employees']);
+      return data;
     }
   }
   return [];
@@ -33,7 +36,7 @@ class UserListPage extends StatefulWidget {
 }
 
 class _UserListPageState extends State<UserListPage> {
-  late Future<List<Map<String, dynamic>>> _futureEmployees;
+  late Future<List<dynamic>> _futureEmployees;
 
   @override
   void initState() {
@@ -56,7 +59,7 @@ class _UserListPageState extends State<UserListPage> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
+      body: FutureBuilder<List<dynamic>>(
         future: _futureEmployees,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -89,8 +92,7 @@ class _UserListPageState extends State<UserListPage> {
     );
   }
 
-  Widget _buildUserList(
-      List<Map<String, dynamic>> users, BuildContext context) {
+  Widget _buildUserList(List<dynamic> users, BuildContext context) {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: users.length,

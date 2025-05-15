@@ -11,6 +11,7 @@ import 'package:flutter_attendance_clean/presentation/blocs/user/user_event.dart
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class EditProfilePage extends StatefulWidget {
   @override
@@ -75,8 +76,34 @@ class _EditProfilePageState extends State<EditProfilePage> {
       .replaceAll(RegExp(r'[.]$'), '')
       .trim();
 
+  Future<String?> uploadCCCDImage(String imagePath, String side) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token == null) return null;
+
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('${dotenv.env['API_BASE_URL']}/api/employee/cccd-scan/$side'),
+    );
+
+    request.headers.addAll({
+      'Authorization': 'Bearer $token',
+    });
+
+    request.files.add(await http.MultipartFile.fromPath('image', imagePath));
+
+    final response = await request.send();
+    if (response.statusCode == 200) {
+      final responseData = await response.stream.bytesToString();
+      final data = jsonDecode(responseData);
+      return data['imageUrl'];
+    }
+    return null;
+  }
+
   Future<Map<String, dynamic>> _scanCCCDFront() async {
-    final uri = Uri.parse('http://localhost:3000/api/employee/cccd-scan/front');
+    final uri =
+        Uri.parse('${dotenv.env['API_BASE_URL']}/api/employee/cccd-scan/front');
     var request = http.MultipartRequest('POST', uri);
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
@@ -110,7 +137,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Future<Map<String, dynamic>> _scanCCCDBack() async {
-    final uri = Uri.parse('http://localhost:3000/api/employee/cccd-scan/back');
+    final uri =
+        Uri.parse('${dotenv.env['API_BASE_URL']}/api/employee/cccd-scan/back');
     var request = http.MultipartRequest('POST', uri);
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');

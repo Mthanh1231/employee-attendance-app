@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class HttpClient {
-  final String _baseUrl = dotenv.env['API_URL']!;
+  final String _baseUrl = dotenv.env['API_BASE_URL']!;
   final http.Client client;
   String? _token;
 

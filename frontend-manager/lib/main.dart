@@ -21,6 +21,7 @@ import 'presentation/pages/settings_page.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load();
+  print('API_BASE_URL: ${dotenv.env['API_BASE_URL']}');
 
   final httpClient = HttpClient();
   final userRemote = UserRemoteDataSourceImpl(client: httpClient);

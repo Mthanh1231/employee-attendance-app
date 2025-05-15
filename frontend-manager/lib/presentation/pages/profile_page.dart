@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<Map<String, dynamic>?> fetchManagerProfile() async {
   final prefs = await SharedPreferences.getInstance();
@@ -9,7 +10,7 @@ Future<Map<String, dynamic>?> fetchManagerProfile() async {
   if (token == null) return null;
 
   final response = await http.get(
-    Uri.parse('http://localhost:3000/api/manager/profile'),
+    Uri.parse('${dotenv.env['API_BASE_URL']}/api/manager/profile'),
     headers: {
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
